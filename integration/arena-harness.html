@@ -8,14 +8,16 @@
     <script type="module">
       import { ArenaSession } from "/src/arena-session.ts";
       import { decodeBoard, encodeBoard } from "/src/game/codec.ts";
-      import { UsionBridge } from "/src/usion.ts";
+      import { initializeUsion, UsionBridge } from "/src/usion.ts";
 
       const params = new URLSearchParams(location.search);
       const playerId = params.get("player") || "host";
       const bootDelay = Math.max(0, Number(params.get("bootDelay")) || 0);
+      const nativeHost = params.get("native") === "1";
       const channel = new BroadcastChannel("blockfall-arena-integration");
       const handlers = {};
       let sent = 0;
+      let sdkInitialized = false;
 
       function relay(payload, reliable = false) {
         sent += 1;
@@ -57,9 +59,14 @@
         leaderboard: {},
         game
       };
+      api.init = async () => { sdkInitialized = true; return api.config; };
+      if (nativeHost) {
+        window.ReactNativeWebView = { postMessage() {} };
+        window.Usion = api;
+      }
 
       const state = { roundStarted: false, countdown: -1, ended: false, events: 0, errors: [] };
-      const bridge = new UsionBridge(api.config, api);
+      const bridge = nativeHost ? await initializeUsion() : new UsionBridge(api.config, api);
       const session = new ArenaSession(bridge, {
         mode: () => render(),
         event: () => { state.events += 1; render(); },
@@ -80,6 +87,7 @@
         const opponent = [...session.opponents().values()][0];
         document.querySelector("#status").textContent = JSON.stringify({
           playerId,
+          sdkInitialized,
           arena: session.isArena(),
           roundStarted: state.roundStarted,
           countdown: state.countdown,

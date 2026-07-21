@@ -1,6 +1,6 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ArenaSession } from "./arena-session";
-import { UsionBridge, type UsionApi } from "./usion";
+import { initializeUsion, UsionBridge, type UsionApi } from "./usion";
 
 function mockPlatform(mode: "single" | "multiplayer" = "multiplayer", playerId = "host") {
   const handlers: Record<string, (data: never) => void> = {};
@@ -34,7 +34,28 @@ function callbacks() {
   return { mode: vi.fn(), event: vi.fn(), countdown: vi.fn(), roundStart: vi.fn(), roundEnd: vi.fn(), connection: vi.fn(), error: vi.fn() };
 }
 
+afterEach(() => vi.unstubAllGlobals());
+
 describe("ArenaSession platform lifecycle", () => {
+  it("initializes multiplayer inside a top-level React Native WebView", async () => {
+    const platform = mockPlatform("multiplayer", "guest");
+    const init = vi.fn(async () => platform.api.config);
+    platform.api.init = init;
+    const documentWindow = {};
+    vi.stubGlobal("window", {
+      self: documentWindow,
+      top: documentWindow,
+      ReactNativeWebView: { postMessage: vi.fn() },
+      Usion: platform.api
+    });
+    vi.stubGlobal("navigator", { language: "en" });
+
+    const bridge = await initializeUsion();
+
+    expect(init).toHaveBeenCalledWith({ timeout: 8000 });
+    expect(bridge.isMultiplayer()).toBe(true);
+  });
+
   it("registers every multiplayer handler before connecting and joins the assigned room", async () => {
     const platform = mockPlatform();
     const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());

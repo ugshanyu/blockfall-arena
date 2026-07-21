@@ -59,7 +59,16 @@ export interface UsionApi {
   game: UsionGameApi;
 }
 
-declare global { interface Window { Usion?: UsionApi; } }
+declare global {
+  interface Window {
+    Usion?: UsionApi;
+    ReactNativeWebView?: { postMessage(message: string): void };
+  }
+}
+
+export function isUsionHosted(framed: boolean, hasNativeBridge: boolean): boolean {
+  return framed || hasNativeBridge;
+}
 
 export interface SavedRun {
   friends: LeaderboardEntry[];
@@ -124,7 +133,10 @@ export class UsionBridge {
 }
 
 export async function initializeUsion(): Promise<UsionBridge> {
-  if (window.self === window.top) return new UsionBridge({ language: navigator.language, theme: "dark", mode: "single" });
+  const hasNativeBridge = typeof window.ReactNativeWebView?.postMessage === "function";
+  if (!isUsionHosted(window.self !== window.top, hasNativeBridge)) {
+    return new UsionBridge({ language: navigator.language, theme: "dark", mode: "single" });
+  }
   const api = window.Usion;
   if (!api) throw new Error("Usion SDK is unavailable");
   const config = await api.init({ timeout: 8000 });
