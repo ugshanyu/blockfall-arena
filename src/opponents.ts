@@ -1,4 +1,5 @@
 import type { GameSnapshot } from "./game/types";
+import { t } from "./i18n";
 import { drawMiniBoard } from "./renderer";
 
 interface PlayerInfo { name: string; avatar: string }
@@ -9,17 +10,20 @@ export class OpponentGrid {
 
   constructor(private root: HTMLElement) {}
 
-  update(snapshots: Map<string, GameSnapshot>, players: Map<string, PlayerInfo>): void {
-    for (const id of [...this.cards.keys()]) if (!snapshots.has(id)) {
+  update(snapshots: Map<string, GameSnapshot>, players: Map<string, PlayerInfo>, readyIds: string[] = []): void {
+    const visible = new Set([...readyIds, ...snapshots.keys()]);
+    for (const id of [...this.cards.keys()]) if (!visible.has(id)) {
       this.cards.get(id)?.root.remove();
       this.cards.delete(id);
     }
-    for (const [id, snapshot] of snapshots) {
+    for (const id of visible) {
+      const snapshot = snapshots.get(id);
       const card = this.cards.get(id) ?? this.create(id);
       const player = players.get(id);
       card.name.textContent = player?.name || "Player";
-      card.score.textContent = snapshot.score.toLocaleString();
-      card.root.classList.toggle("is-out", snapshot.phase === "game-over");
+      card.score.textContent = snapshot ? snapshot.score.toLocaleString() : t("ready");
+      card.root.classList.toggle("is-ready", !snapshot);
+      card.root.classList.toggle("is-out", snapshot?.phase === "game-over");
       drawMiniBoard(card.canvas, snapshot);
     }
   }

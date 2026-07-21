@@ -3,9 +3,11 @@
   <head><meta charset="UTF-8"><title>Arena relay harness</title></head>
   <body>
     <output id="status">booting</output>
+    <button id="attack" type="button">Prepare Tetris</button>
     <button id="drop" type="button">Hard drop</button>
     <script type="module">
       import { ArenaSession } from "/src/arena-session.ts";
+      import { decodeBoard, encodeBoard } from "/src/game/codec.ts";
       import { UsionBridge } from "/src/usion.ts";
 
       const params = new URLSearchParams(location.search);
@@ -82,14 +84,23 @@
           roundStarted: state.roundStarted,
           countdown: state.countdown,
           playerCount: session.playerCount(),
+          readyOpponents: session.readyOpponentIds(),
           localScore: session.snapshot().score,
           opponentScore: opponent?.score ?? null,
+          pendingGarbage: session.snapshot().pendingGarbage,
+          garbageCells: session.snapshot().board.flat().filter((cell) => cell === 8).length,
           events: state.events,
           ended: state.ended,
           errors: state.errors
         });
       }
 
+      document.querySelector("#attack").addEventListener("click", () => {
+        const current = session.local.networkSnapshot();
+        const board = decodeBoard(current.board);
+        for (let y = 16; y < 20; y += 1) board[y] = [0, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+        session.local.restore({ ...current, board: encodeBoard(board), active: { type: "I", rotation: 1, x: -2, y: 16 }, phase: "playing", clearRows: [], clearProgress: 0 });
+      });
       document.querySelector("#drop").addEventListener("click", () => session.command("hard-drop"));
       // An invite-card tap seats the friend before their game iframe loads.
       // Reproduce that production ordering when bootDelay is provided.

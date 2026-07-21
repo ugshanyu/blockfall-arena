@@ -21,6 +21,7 @@ export class GameRenderer {
   private lastTime = performance.now();
   private shake = 0;
   private flash = 0;
+  private garbageLift = 0;
   private clearRows: number[] = [];
   private collapseAge = 1;
   private trail?: { type: PieceType; rotation: number; x: number; fromY: number; toY: number; age: number };
@@ -49,6 +50,7 @@ export class GameRenderer {
     } else if (event.type === "garbage") {
       this.shake = 8;
       this.flash = 0.35;
+      this.garbageLift = Math.min(8, event.count ?? 1) * CELL;
     }
   }
 
@@ -64,6 +66,7 @@ export class GameRenderer {
     ctx.translate(sx, sy);
     this.drawWell(ctx);
     this.drawBoard(ctx, snapshot);
+    this.drawPendingGarbage(ctx, snapshot.pendingGarbage, now);
     this.drawGhost(ctx, snapshot);
     this.drawActive(ctx, snapshot, dt);
     this.drawTrail(ctx);
@@ -89,6 +92,8 @@ export class GameRenderer {
     this.shake *= Math.exp(-18 * dt);
     this.flash *= Math.exp(-9 * dt);
     this.collapseAge = Math.min(1, this.collapseAge + dt / 0.26);
+    this.garbageLift *= Math.exp(-13 * dt);
+    if (this.garbageLift < 0.1) this.garbageLift = 0;
     if (this.trail) {
       this.trail.age += dt / 0.22;
       if (this.trail.age >= 1) this.trail = undefined;
@@ -125,7 +130,7 @@ export class GameRenderer {
         if (clearing) {
           const scale = Math.max(0.08, 1 - snapshot.clearProgress * 0.9);
           this.drawTile(ctx, value, x * CELL + CELL * (1 - scale) / 2, y * CELL + CELL * (1 - scale) / 2, scale, 1 - snapshot.clearProgress * 0.75);
-        } else this.drawTile(ctx, value, x * CELL, y * CELL - offset, 1, 1);
+        } else this.drawTile(ctx, value, x * CELL, y * CELL - offset + this.garbageLift, 1, 1);
       }
     }
     if (snapshot.phase === "clearing") {
@@ -140,6 +145,27 @@ export class GameRenderer {
     ctx.save();
     ctx.globalAlpha = 0.23;
     for (const [dx, dy] of cells(snapshot.active.type, snapshot.active.rotation)) this.drawTile(ctx, PIECE_ID[snapshot.active.type], (snapshot.active.x + dx) * CELL, (snapshot.ghostY + dy) * CELL, 0.88, 0.7);
+    ctx.restore();
+  }
+
+  private drawPendingGarbage(ctx: CanvasRenderingContext2D, count: number, now: number): void {
+    const rows = Math.min(8, count);
+    if (!rows) return;
+    const pulse = 0.09 + (Math.sin(now / 150) + 1) * 0.035;
+    ctx.save();
+    ctx.fillStyle = `rgba(255,137,96,${pulse})`;
+    ctx.strokeStyle = "rgba(255,179,112,.7)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 6]);
+    for (let index = 0; index < rows; index += 1) {
+      const y = HEIGHT - (index + 1) * CELL;
+      ctx.fillRect(1, y + 1, WIDTH - 2, CELL - 2);
+      ctx.strokeRect(3, y + 3, WIDTH - 6, CELL - 6);
+    }
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#ffd18a";
+    ctx.font = "900 15px ui-sans-serif, sans-serif";
+    ctx.fillText(`▲ ${count}`, 9, HEIGHT - rows * CELL + 20);
     ctx.restore();
   }
 
@@ -185,6 +211,13 @@ export class GameRenderer {
     ctx.beginPath(); ctx.roundRect(2, 2, 56, 56, 11); ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,.32)"; ctx.lineWidth = 2; ctx.stroke();
     ctx.fillStyle = "rgba(255,255,255,.2)"; ctx.beginPath(); ctx.roundRect(9, 8, 40, 12, 6); ctx.fill();
+    if (id === 8) {
+      ctx.strokeStyle = "rgba(255,220,190,.72)";
+      ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(20, 17); ctx.lineTo(29, 29); ctx.lineTo(23, 38); ctx.lineTo(35, 48); ctx.stroke();
+      ctx.fillStyle = "rgba(255,174,112,.8)";
+      ctx.beginPath(); ctx.arc(44, 42, 3, 0, Math.PI * 2); ctx.fill();
+    }
     this.tiles.set(id, tile);
     return tile;
   }
@@ -223,17 +256,33 @@ export class GameRenderer {
   private easeOut(value: number): number { return 1 - Math.pow(1 - value, 3); }
 }
 
-export function drawMiniBoard(canvas: HTMLCanvasElement, snapshot: GameSnapshot): void {
+export function drawMiniBoard(canvas: HTMLCanvasElement, snapshot?: GameSnapshot): void {
   const ctx = context2d(canvas);
   const width = canvas.width;
   const cell = width / BOARD_WIDTH;
   ctx.clearRect(0, 0, width, canvas.height);
   ctx.fillStyle = "rgba(3,5,17,.9)";
   ctx.fillRect(0, 0, width, canvas.height);
+  ctx.strokeStyle = "rgba(130,148,220,.08)";
+  ctx.lineWidth = 0.5;
+  for (let y = 1; y < BOARD_HEIGHT; y += 1) { ctx.beginPath(); ctx.moveTo(0, y * cell); ctx.lineTo(width, y * cell); ctx.stroke(); }
+  if (!snapshot) return;
   for (let y = 0; y < BOARD_HEIGHT; y += 1) for (let x = 0; x < BOARD_WIDTH; x += 1) {
     const value = snapshot.board[y]?.[x] as Cell;
     if (!value) continue;
     ctx.fillStyle = COLORS[value] ?? "#7a8196";
     ctx.fillRect(x * cell + 0.5, y * cell + 0.5, cell - 1, cell - 1);
+  }
+  if (snapshot.active) {
+    ctx.fillStyle = COLORS[PIECE_ID[snapshot.active.type]]!;
+    for (const [dx, dy] of cells(snapshot.active.type, snapshot.active.rotation)) {
+      const x = snapshot.active.x + dx;
+      const y = snapshot.active.y + dy;
+      if (y >= 0) ctx.fillRect(x * cell + 0.5, y * cell + 0.5, cell - 1, cell - 1);
+    }
+  }
+  if (snapshot.pendingGarbage) {
+    ctx.fillStyle = "#ff9d70";
+    ctx.fillRect(0, canvas.height - Math.min(8, snapshot.pendingGarbage) * cell, 1.5, Math.min(8, snapshot.pendingGarbage) * cell);
   }
 }

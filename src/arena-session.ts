@@ -59,13 +59,12 @@ export class ArenaSession {
         else this.beginGuest(message);
       }
     }
-    if (!this.arenaMode || !this.roundActive) {
+    if (!this.arenaMode) {
       this.local.tick(deltaMs);
       this.emitLocalEvents();
-      if (this.arenaMode && this.local.phase === "game-over") this.local.reset(Date.now());
-      this.maybeBeginCountdown();
       return;
     }
+    if (!this.roundActive) { this.maybeBeginCountdown(); return; }
     if (this.host && this.authority) {
       this.authority.tick(deltaMs);
       this.broadcastElapsed += deltaMs;
@@ -92,6 +91,7 @@ export class ArenaSession {
   }
   command(command: Command): boolean {
     if (!this.connected || this.local.phase === "game-over") return false;
+    if (this.arenaMode && !this.roundActive) return false;
     this.inputSequence += 1;
     if (this.arenaMode && this.roundActive) {
       if (this.host && this.authority) return this.authority.input(this.bridge.playerId, this.inputSequence, command);
@@ -109,9 +109,11 @@ export class ArenaSession {
   }
 
   isArena(): boolean { return this.arenaMode; }
+  isWaiting(): boolean { return this.arenaMode && !this.countdown && !this.roundActive; }
   isRoundActive(): boolean { return this.roundActive && !this.roundEnded; }
   isHost(): boolean { return this.host; }
   playerCount(): number { return this.present.size; }
+  readyOpponentIds(): string[] { return [...this.present].filter((id) => id !== this.bridge.playerId); }
   snapshot(): GameSnapshot { return this.local.snapshot(); }
   opponents(): Map<string, GameSnapshot> {
     const result = new Map<string, GameSnapshot>();
@@ -152,7 +154,7 @@ export class ArenaSession {
     if (this.host) this.maybeBeginCountdown();
   }
   private onPlayerLeft(playerId?: string, roster?: string[]): void {
-    if (playerId) { this.present.delete(String(playerId)); this.authority?.remove(String(playerId)); }
+    if (playerId) { this.present.delete(String(playerId)); this.remote.delete(String(playerId)); this.authority?.remove(String(playerId)); }
     if (playerId === this.hostId && this.bridge.playerId !== this.hostId) {
       this.callbacks.error(t("hostLeft"));
       if (this.roundActive && !this.roundEnded) {
@@ -226,7 +228,6 @@ export class ArenaSession {
     this.send("arena_start", message);
     this.callbacks.roundStart();
   }
-
   private beginGuest(message: CountdownMessage): void {
     if (!message.players.includes(this.bridge.playerId) || message.roundId < this.roundId) return;
     this.roundId = message.roundId;
@@ -240,7 +241,6 @@ export class ArenaSession {
     this.local.reset(message.seed);
     this.callbacks.roundStart();
   }
-
   private broadcastState(): void {
     if (!this.authority) return;
     const state: ArenaWireState = { roundId: this.roundId, players: this.authority.snapshots(), ended: this.authority.ended, winnerId: this.authority.winnerId };

@@ -36,6 +36,14 @@
             <div id="gesture-hint" class="gesture-hint" data-i18n="gestureHint">Drag to move · Tap to rotate · Swipe down to drop</div>
             <div id="connection-overlay" class="connection-overlay is-hidden" data-i18n="reconnecting">Reconnecting…</div>
 
+            <div id="waiting-overlay" class="waiting-overlay is-hidden" aria-live="polite">
+              <div class="waiting-card">
+                <div class="waiting-blocks" aria-hidden="true"><i></i><i></i><i></i></div>
+                <strong data-i18n="waiting">Waiting for a rival…</strong>
+                <span id="waiting-count">1/8 players ready</span>
+              </div>
+            </div>
+
             <div id="pause-overlay" class="overlay is-hidden">
               <div class="panel compact"><small data-i18n="pausedLabel">Stack frozen</small><h2 data-i18n="paused">Paused</h2><button id="resume" class="primary" type="button" data-i18n="resume">Resume</button></div>
             </div>

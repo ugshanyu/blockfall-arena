@@ -26,6 +26,8 @@ const callout = required<HTMLElement>("#callout");
 const gestureHint = required<HTMLElement>("#gesture-hint");
 const pauseOverlay = required<HTMLElement>("#pause-overlay");
 const endOverlay = required<HTMLElement>("#end-overlay");
+const waitingOverlay = required<HTMLElement>("#waiting-overlay");
+const waitingCount = required<HTMLElement>("#waiting-count");
 const arenaStatus = required<HTMLElement>("#arena-status");
 const opponentRoot = required<HTMLElement>("#opponents");
 const reconnecting = required<HTMLElement>("#connection-overlay");
@@ -37,8 +39,12 @@ let announceTimer = 0;
 let recordRequest = 0;
 let endShown = false;
 let previousPhase = "playing";
+let previousPendingGarbage = 0;
 let bridge: UsionBridge;
 let previewOpponents: Map<string, GameSnapshot> | undefined;
+let previewReadyIds: string[] | undefined;
+let previewWaiting = false;
+let previewPlayerCount: number | undefined;
 
 function show(element: HTMLElement, visible: boolean): void { element.classList.toggle("is-hidden", !visible); }
 
@@ -69,6 +75,7 @@ async function boot(): Promise<void> {
     mode(active) {
       show(arenaStatus, active);
       show(opponentRoot, active);
+      show(waitingOverlay, active);
       pauseButton.disabled = active;
       if (active) announce(t("waiting"));
     },
@@ -83,11 +90,13 @@ async function boot(): Promise<void> {
     },
     countdown(seconds) {
       show(endOverlay, false);
+      show(waitingOverlay, false);
       endShown = false;
       announce(t("countdown", { count: seconds || 1 }), true);
     },
     roundStart() {
       show(endOverlay, false);
+      show(waitingOverlay, false);
       endShown = false;
       recordRequest += 1;
       announce("GO", true);
@@ -111,6 +120,12 @@ async function boot(): Promise<void> {
     last = now;
     session.update(delta);
     const snapshot = session.snapshot();
+    show(waitingOverlay, previewWaiting || session.isWaiting());
+    waitingCount.textContent = t("readyCount", { count: previewPlayerCount ?? session.playerCount(), max: 8 });
+    if (session.isRoundActive() && snapshot.pendingGarbage > previousPendingGarbage) {
+      announce(t("incoming", { count: snapshot.pendingGarbage - previousPendingGarbage }), true);
+    }
+    previousPendingGarbage = snapshot.pendingGarbage;
     renderer.render(snapshot, now);
     updateHud(snapshot, session);
     if (!session.isArena() && snapshot.phase === "game-over" && previousPhase !== "game-over") {
@@ -120,7 +135,7 @@ async function boot(): Promise<void> {
     opponentsElapsed += delta;
     if (opponentsElapsed >= 120) {
       opponentsElapsed = 0;
-      opponents.update(previewOpponents ?? session.opponents(), session.players);
+      opponents.update(previewOpponents ?? session.opponents(), session.players, previewReadyIds ?? session.readyOpponentIds());
     }
     requestAnimationFrame(frame);
   };
@@ -173,6 +188,8 @@ function installDevTools(session: ArenaSession): void {
   arenaButton.setAttribute("aria-label", "Preview full arena");
   arenaButton.style.cssText = "position:fixed;inset:0 auto auto 3px;width:2px;height:2px;opacity:.001;overflow:hidden;z-index:9999";
   arenaButton.addEventListener("click", () => {
+    previewWaiting = false;
+    previewPlayerCount = 8;
     previewOpponents = new Map();
     const base = session.snapshot();
     for (let index = 1; index <= 7; index += 1) {
@@ -180,14 +197,39 @@ function installDevTools(session: ArenaSession): void {
       session.players.set(id, { name: `Rival ${index}`, avatar: "" });
       previewOpponents.set(id, { ...base, board: base.board.map((row) => [...row]), score: index * 1240, lines: index * 3 });
     }
+    previewReadyIds = [...previewOpponents.keys()];
     show(opponentRoot, true);
     show(arenaStatus, true);
   });
   document.body.append(arenaButton);
 
+  const waitingButton = document.createElement("button");
+  waitingButton.id = "dev-preview-waiting";
+  waitingButton.setAttribute("aria-label", "Preview arena waiting");
+  waitingButton.style.cssText = "position:fixed;inset:0 auto auto 20px;width:6px;height:6px;opacity:.001;overflow:hidden;z-index:9999";
+  waitingButton.addEventListener("click", () => {
+    previewWaiting = true;
+    previewPlayerCount = 2;
+    previewOpponents = new Map();
+    previewReadyIds = ["rival-ready"];
+    session.players.set("rival-ready", { name: "Rival ready", avatar: "" });
+    waitingCount.textContent = t("readyCount", { count: 2, max: 8 });
+    show(opponentRoot, true);
+    show(arenaStatus, true);
+    show(waitingOverlay, true);
+  });
+  document.body.append(waitingButton);
+
+  const garbageButton = document.createElement("button");
+  garbageButton.id = "dev-preview-garbage";
+  garbageButton.setAttribute("aria-label", "Preview incoming garbage");
+  garbageButton.style.cssText = "position:fixed;inset:0 auto auto 30px;width:6px;height:6px;opacity:.001;overflow:hidden;z-index:9999";
+  garbageButton.addEventListener("click", () => session.local.queueGarbage(4, [0, 3, 6, 8]));
+  document.body.append(garbageButton);
+
   const endButton = document.createElement("button");
   endButton.setAttribute("aria-label", "Preview game over");
-  endButton.style.cssText = "position:fixed;inset:0 auto auto 6px;width:2px;height:2px;opacity:.001;overflow:hidden;z-index:9999";
+  endButton.style.cssText = "position:fixed;inset:0 auto auto 40px;width:6px;height:6px;opacity:.001;overflow:hidden;z-index:9999";
   endButton.addEventListener("click", () => {
     const state = session.local.networkSnapshot();
     session.local.restore({ ...state, active: null, phase: "game-over", score: 12400, lines: 28, level: 3 });
@@ -239,7 +281,7 @@ function updateHud(snapshot: GameSnapshot, session: ArenaSession): void {
   level.textContent = String(snapshot.level);
   pauseButton.textContent = snapshot.phase === "paused" ? "▶" : "Ⅱ";
   const status = arenaStatus.querySelector("span");
-  if (status) status.textContent = `Arena · ${session.playerCount()}/8`;
+  if (status) status.textContent = `Arena · ${previewPlayerCount ?? session.playerCount()}/8`;
   boardWrap.classList.toggle("danger", snapshot.board.slice(0, 5).some((row) => row.some(Boolean)));
 }
 

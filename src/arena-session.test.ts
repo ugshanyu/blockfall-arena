@@ -87,6 +87,18 @@ describe("ArenaSession platform lifecycle", () => {
     vi.useRealTimers();
   });
 
+  it("freezes input while waiting and exposes ready rivals for mini boards", () => {
+    const platform = mockPlatform("multiplayer", "host");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    const x = session.snapshot().active?.x;
+    expect(session.isWaiting()).toBe(true);
+    expect(session.command("left")).toBe(false);
+    expect(session.snapshot().active?.x).toBe(x);
+    platform.handlers.realtime?.({ player_id: "guest", action_type: "arena_hello", action_data: { name: "Guest" } } as never);
+    expect(session.readyOpponentIds()).toEqual(["guest"]);
+  });
+
   it("resends an active round when a participating friend's iframe remounts", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-21T00:00:00Z"));

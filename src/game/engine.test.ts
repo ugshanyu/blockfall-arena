@@ -62,6 +62,25 @@ describe("BlockEngine", () => {
     expect(encodeBoard(decodeBoard(encoded))).toBe(encoded);
     expect(encoded).toHaveLength(200);
   });
+
+  it("lands incoming attacks at the bottom as normally clearable garbage", () => {
+    const engine = new BlockEngine(17);
+    engine.queueGarbage(1, [0]);
+    engine.command("hard-drop");
+    expect(engine.snapshot().board[19]).toEqual([0, 8, 8, 8, 8, 8, 8, 8, 8, 8]);
+    expect(engine.drainEvents()).toEqual(expect.arrayContaining([expect.objectContaining({ type: "garbage", count: 1 })]));
+
+    const state = engine.networkSnapshot();
+    const board = Array.from({ length: 20 }, () => Array<Cell>(10).fill(0));
+    board[19] = [0, 8, 8, 8, 8, 8, 8, 8, 8, 8];
+    engine.restore({ ...state, board: encodeBoard(board), active: { type: "I", rotation: 1, x: -2, y: 16 }, phase: "playing", clearRows: [], clearProgress: 0 });
+    engine.command("hard-drop");
+    expect(engine.snapshot().clearRows).toEqual([19]);
+    engine.tick(100);
+    engine.tick(100);
+    engine.tick(100);
+    expect(engine.snapshot().board.flat()).not.toContain(8);
+  });
 });
 
 describe("ArenaAuthority", () => {

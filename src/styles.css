@@ -80,6 +80,15 @@ body::before {
 .callout.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .callout.strong { font-size: 24px; color: #fff1b2; }
 .connection-overlay { position: absolute; z-index: 12; inset: 0; display: grid; place-items: center; background: rgba(3, 5, 17, .68); backdrop-filter: blur(4px); font-size: 13px; font-weight: 800; }
+.waiting-overlay { position: absolute; z-index: 9; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(3, 5, 17, .7); backdrop-filter: blur(5px); }
+.waiting-card { width: min(100%, 240px); padding: 24px 18px; display: grid; justify-items: center; gap: 8px; border: 1px solid rgba(167, 181, 247, .25); border-radius: 20px; background: linear-gradient(155deg, rgba(25, 30, 70, .94), rgba(8, 11, 32, .97)); box-shadow: 0 22px 60px rgba(0, 0, 0, .48); text-align: center; }
+.waiting-card strong { font-size: 15px; }
+.waiting-card span { color: #9fa8cb; font-size: 11px; font-weight: 700; }
+.waiting-blocks { height: 29px; display: flex; align-items: end; gap: 4px; }
+.waiting-blocks i { width: 16px; height: 16px; border-radius: 4px; background: linear-gradient(145deg, #f9e48c, #bf793d); box-shadow: inset 0 1px rgba(255,255,255,.6), 0 0 14px rgba(246, 205, 100, .23); animation: waiting-block 1s ease-in-out infinite alternate; }
+.waiting-blocks i:nth-child(2) { animation-delay: -.35s; }
+.waiting-blocks i:nth-child(3) { animation-delay: -.7s; }
+@keyframes waiting-block { to { transform: translateY(-10px) rotate(7deg); filter: brightness(1.2); } }
 
 .overlay { position: absolute; z-index: 10; inset: 0; display: grid; place-items: center; padding: 12px; background: rgba(3, 5, 17, .64); backdrop-filter: blur(7px); }
 .panel { width: min(100%, 274px); max-height: 96%; overflow: auto; padding: 19px; border: 1px solid rgba(174, 187, 255, .24); border-radius: 22px; background: linear-gradient(160deg, rgba(20, 25, 61, .97), rgba(7, 10, 30, .98)); box-shadow: 0 24px 70px rgba(0, 0, 0, .52); text-align: center; }
@@ -114,6 +123,10 @@ body::before {
 .opponent-card div { min-width: 0; display: grid; gap: 3px; }
 .opponent-card b { overflow: hidden; color: #dce0f5; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .opponent-card span { color: #efce73; font-size: 9px; font-variant-numeric: tabular-nums; }
+.opponent-card.is-ready { border-color: rgba(105, 232, 168, .3); }
+.opponent-card.is-ready canvas { opacity: .7; animation: ready-board 1.6s ease-in-out infinite alternate; }
+.opponent-card.is-ready span { color: #69e8a8; font-weight: 850; letter-spacing: .08em; }
 .opponent-card.is-out { opacity: .38; filter: grayscale(.8); }
 .opponent-card.pulse { animation: rival-clear .38s ease-out; }
 @keyframes rival-clear { 45% { border-color: #fff29a; box-shadow: 0 0 17px rgba(255, 226, 112, .5); transform: scale(1.04); } }
+@keyframes ready-board { to { opacity: 1; box-shadow: 0 0 12px rgba(105, 232, 168, .25); } }
