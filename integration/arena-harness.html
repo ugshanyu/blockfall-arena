@@ -10,6 +10,7 @@
 
       const params = new URLSearchParams(location.search);
       const playerId = params.get("player") || "host";
+      const bootDelay = Math.max(0, Number(params.get("bootDelay")) || 0);
       const channel = new BroadcastChannel("blockfall-arena-integration");
       const handlers = {};
       let sent = 0;
@@ -90,8 +91,13 @@
       }
 
       document.querySelector("#drop").addEventListener("click", () => session.command("hard-drop"));
-      session.start();
-      setInterval(() => { session.update(20); render(); }, 20);
+      // An invite-card tap seats the friend before their game iframe loads.
+      // Reproduce that production ordering when bootDelay is provided.
+      if (bootDelay) relay({ kind: "join" }, true);
+      setTimeout(() => {
+        session.start();
+        setInterval(() => { session.update(20); render(); }, 20);
+      }, bootDelay);
     </script>
   </body>
 </html>

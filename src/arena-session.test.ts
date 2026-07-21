@@ -59,6 +59,74 @@ describe("ArenaSession platform lifecycle", () => {
     expect(platform.game.join).not.toHaveBeenCalled();
   });
 
+  it("waits for the friend's game to be ready before starting the countdown", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-21T00:00:00Z"));
+    const platform = mockPlatform("multiplayer", "host");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    platform.handlers.joined?.({ player_id: "host", player_ids: ["host", "guest"] } as never);
+    platform.handlers.playerJoined?.({ player_id: "guest", player_ids: ["host", "guest"] } as never);
+    vi.advanceTimersByTime(3000);
+    session.update(3000);
+    expect(session.isRoundActive()).toBe(false);
+    expect(platform.game.realtime).not.toHaveBeenCalledWith("arena_countdown", expect.anything());
+
+    platform.handlers.realtime?.({
+      player_id: "guest",
+      action_type: "arena_hello",
+      action_data: { name: "Guest", avatar: "" }
+    } as never);
+    expect(platform.game.realtime).toHaveBeenCalledWith("arena_countdown", expect.objectContaining({
+      roundId: 1, players: ["host", "guest"]
+    }));
+
+    vi.advanceTimersByTime(3000);
+    session.update(3000);
+    expect(session.isRoundActive()).toBe(true);
+    vi.useRealTimers();
+  });
+
+  it("resends an active round when a participating friend's iframe remounts", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-07-21T00:00:00Z"));
+    const platform = mockPlatform("multiplayer", "host");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    platform.handlers.joined?.({ player_id: "host", player_ids: ["host", "guest"] } as never);
+    platform.handlers.realtime?.({ player_id: "guest", action_type: "arena_hello", action_data: { name: "Guest" } } as never);
+    vi.advanceTimersByTime(3000);
+    session.update(3000);
+    platform.game.realtime.mockClear();
+    platform.handlers.realtime?.({ player_id: "guest", action_type: "arena_hello", action_data: { name: "Guest" } } as never);
+
+    expect(platform.game.realtime).toHaveBeenCalledWith("arena_start", expect.objectContaining({
+      roundId: 1, targetId: "guest", players: ["host", "guest"]
+    }));
+    vi.useRealTimers();
+  });
+
+  it("ignores a late-join start intended for a different player", () => {
+    const platform = mockPlatform("multiplayer", "guest");
+    const events = callbacks();
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), events);
+    session.start();
+    platform.handlers.realtime?.({
+      player_id: "host",
+      action_type: "arena_start",
+      action_data: { roundId: 1, startAt: Date.now(), seed: 7, players: ["host", "guest"], targetId: "other" }
+    } as never);
+    expect(session.isRoundActive()).toBe(false);
+
+    platform.handlers.realtime?.({
+      player_id: "host",
+      action_type: "arena_start",
+      action_data: { roundId: 1, startAt: Date.now(), seed: 7, players: ["host", "guest"], targetId: "guest" }
+    } as never);
+    expect(session.isRoundActive()).toBe(true);
+    expect(events.roundStart).toHaveBeenCalledOnce();
+  });
+
   it("ends gracefully instead of migrating authority when the host leaves", () => {
     const platform = mockPlatform("multiplayer", "guest");
     const events = callbacks();

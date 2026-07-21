@@ -18,3 +18,7 @@ export interface CountdownMessage {
   seed: number;
   players: string[];
 }
+
+export interface ArenaStartMessage extends CountdownMessage {
+  targetId?: string;
+}

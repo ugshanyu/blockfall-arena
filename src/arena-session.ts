@@ -1,5 +1,5 @@
 import { ArenaAuthority } from "./arena-authority";
-import type { ArenaCallbacks, CountdownMessage, PlayerInfo } from "./arena-types";
+import type { ArenaCallbacks, ArenaStartMessage, CountdownMessage, PlayerInfo } from "./arena-types";
 import { BlockEngine } from "./game/engine";
 import { viewSnapshot } from "./game/network-view";
 import type { Command, GameEvent, GameSnapshot, NetworkSnapshot } from "./game/types";
@@ -12,6 +12,7 @@ export class ArenaSession {
   private present = new Set<string>();
   private authority?: ArenaAuthority;
   private countdown?: CountdownMessage;
+  private activeRound?: CountdownMessage;
   private roundId = 0;
   private inputSequence = 0;
   private broadcastElapsed = 0;
@@ -25,7 +26,6 @@ export class ArenaSession {
   private connected = true;
   private lastCountdownSecond = -1;
   private seenEvents = new Map<string, number>();
-
   constructor(private bridge: UsionBridge, private callbacks: ArenaCallbacks) {
     this.players.set(bridge.playerId, { name: bridge.playerName, avatar: bridge.playerAvatar });
     this.present.add(bridge.playerId);
@@ -46,7 +46,6 @@ export class ArenaSession {
     game.onError((error) => this.callbacks.error(error.message || error.code || "Arena error"));
     if (this.bridge.isMultiplayer()) this.promote(false);
   }
-
   update(deltaMs: number): void {
     if (this.countdown) {
       const remaining = Math.max(0, Math.ceil((this.countdown.startAt - Date.now()) / 1000));
@@ -91,7 +90,6 @@ export class ArenaSession {
       this.scheduleCountdown(2500);
     }
   }
-
   command(command: Command): boolean {
     if (!this.connected || this.local.phase === "game-over") return false;
     this.inputSequence += 1;
@@ -106,7 +104,6 @@ export class ArenaSession {
     this.emitLocalEvents();
     return applied;
   }
-
   restartSolo(): void {
     if (!this.arenaMode) this.local.reset(Date.now());
   }
@@ -116,14 +113,12 @@ export class ArenaSession {
   isHost(): boolean { return this.host; }
   playerCount(): number { return this.present.size; }
   snapshot(): GameSnapshot { return this.local.snapshot(); }
-
   opponents(): Map<string, GameSnapshot> {
     const result = new Map<string, GameSnapshot>();
     const snapshots = this.host && this.authority ? this.authority.snapshots() : Object.fromEntries(this.remote);
     for (const [id, snapshot] of Object.entries(snapshots)) if (id !== this.bridge.playerId) result.set(id, viewSnapshot(snapshot));
     return result;
   }
-
   private promote(alreadyJoining: boolean): void {
     if (!this.arenaMode) {
       this.arenaMode = true;
@@ -140,7 +135,6 @@ export class ArenaSession {
       .then(() => this.bridge.api!.game.join(roomId))
       .catch((error: unknown) => this.callbacks.error(error instanceof Error ? error.message : "Could not join arena"));
   }
-
   private onJoined(data: Record<string, unknown>): void {
     this.present.add(this.bridge.playerId);
     const ids = Array.isArray(data.player_ids) ? data.player_ids.map(String) : [];
@@ -149,15 +143,14 @@ export class ArenaSession {
     this.sendHello();
     if (this.host) this.maybeBeginCountdown();
   }
-
   private onPlayerJoined(playerId?: string, roster?: string[]): void {
-    if (playerId) this.present.add(String(playerId));
     if (!this.hostId && roster?.[0]) this.hostId = roster[0];
     this.host = this.hostId === this.bridge.playerId;
+    // A chat-card tap joins the socket before the friend's iframe is ready.
+    // Only arena_hello marks a player ready, otherwise the countdown can be lost.
     this.sendHello();
     if (this.host) this.maybeBeginCountdown();
   }
-
   private onPlayerLeft(playerId?: string, roster?: string[]): void {
     if (playerId) { this.present.delete(String(playerId)); this.authority?.remove(String(playerId)); }
     if (playerId === this.hostId && this.bridge.playerId !== this.hostId) {
@@ -169,17 +162,27 @@ export class ArenaSession {
     }
     void roster;
   }
-
   private onRealtime(message: RealtimeMessage): void {
     const data = message.action_data as Record<string, unknown> | undefined;
     if (!data) return;
     if (message.action_type === "arena_hello") {
       this.present.add(message.player_id);
       this.players.set(message.player_id, { name: String(data.name || "Player"), avatar: String(data.avatar || "") });
-      if (this.host) { this.sendRoster(); this.refreshCountdown(); this.maybeBeginCountdown(); }
+      if (this.host) {
+        this.sendRoster();
+        if (this.roundActive && this.activeRound) {
+          this.send("arena_start", { ...this.activeRound, targetId: message.player_id } satisfies ArenaStartMessage);
+        } else {
+          this.refreshCountdown();
+          this.maybeBeginCountdown();
+        }
+      }
     } else if (message.action_type === "arena_roster") this.receiveRoster(data);
     else if (message.action_type === "arena_countdown") this.receiveCountdown(data as unknown as CountdownMessage);
-    else if (message.action_type === "arena_start" && !this.host) this.beginGuest(data as unknown as CountdownMessage);
+    else if (message.action_type === "arena_start" && !this.host) {
+      const start = data as unknown as ArenaStartMessage;
+      if (!start.targetId || start.targetId === this.bridge.playerId) this.beginGuest(start);
+    }
     else if (message.action_type === "arena_input" && this.host && this.authority) {
       const input = data as unknown as ArenaWireInput;
       this.authority.input(message.player_id, Number(input.seq), input.command);
@@ -189,12 +192,10 @@ export class ArenaSession {
       if (effect.roundId === this.roundId) this.emit(effect.playerId, effect.event);
     } else if (message.action_type === "arena_end") this.receiveEnd(data);
   }
-
   private maybeBeginCountdown(): void {
     if (!this.host || this.roundActive || this.countdown || this.present.size < 2) return;
     this.scheduleCountdown(2800);
   }
-
   private scheduleCountdown(delay: number): void {
     const players = [...this.present].slice(0, 8);
     if (players.length < 2) return;
@@ -202,25 +203,23 @@ export class ArenaSession {
     this.lastCountdownSecond = -1;
     this.send("arena_countdown", this.countdown);
   }
-
   private refreshCountdown(): void {
     if (!this.countdown || this.roundActive) return;
     this.countdown.players = [...this.present].slice(0, 8);
     this.send("arena_countdown", this.countdown);
   }
-
   private receiveCountdown(message: CountdownMessage): void {
     if (!message.players?.includes(this.bridge.playerId)) return;
     this.countdown = message;
     this.roundEnded = false;
   }
-
   private beginRound(message: CountdownMessage): void {
     this.roundId = message.roundId;
     this.countdown = undefined;
     this.lastCountdownSecond = -1;
     this.roundActive = true;
     this.roundEnded = false;
+    this.activeRound = message;
     this.inputSequence = 0;
     this.seenEvents.clear();
     this.authority = new ArenaAuthority(message.players, message.seed, { id: this.bridge.playerId, engine: this.local });
@@ -235,6 +234,7 @@ export class ArenaSession {
     this.lastCountdownSecond = -1;
     this.roundActive = true;
     this.roundEnded = false;
+    this.activeRound = message;
     this.inputSequence = 0;
     this.seenEvents.clear();
     this.local.reset(message.seed);
