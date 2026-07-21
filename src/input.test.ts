@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveGestureAxis } from "./input";
+import { isHardDropGesture, resolveGestureAxis } from "./input";
 
 describe("touch gesture intent", () => {
   it("locks a downward swipe before incidental horizontal drift can move the piece", () => {
@@ -12,5 +12,13 @@ describe("touch gesture intent", () => {
     let axis = resolveGestureAxis("pending", 28, 4);
     axis = resolveGestureAxis(axis, 32, 70, true);
     expect(axis).toBe("horizontal");
+  });
+
+  it("rejects a slight downward gesture", () => {
+    expect(isHardDropGesture(8, 74, 260, 700)).toBe(false);
+  });
+
+  it("accepts a deliberate long vertical swipe", () => {
+    expect(isHardDropGesture(12, 140, 420, 700)).toBe(true);
   });
 });

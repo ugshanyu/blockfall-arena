@@ -20,6 +20,11 @@ export function resolveGestureAxis(axis: GestureAxis, dx: number, dy: number, ha
   return "pending";
 }
 
+export function isHardDropGesture(dx: number, dy: number, elapsedMs: number, canvasHeight: number): boolean {
+  const distance = Math.max(96, canvasHeight * 0.16);
+  return elapsedMs < 650 && dy > distance && dy > Math.abs(dx) * 1.4;
+}
+
 export function bindInput(options: BindOptions): void {
   let pointerId = -1;
   let startX = 0;
@@ -62,7 +67,7 @@ export function bindInput(options: BindOptions): void {
     const elapsed = performance.now() - startTime;
     pointerId = -1;
     if (!cancelled) {
-      if (dy > Math.max(58, options.canvas.clientHeight * 0.09) && elapsed < 650) options.command("hard-drop");
+      if (isHardDropGesture(dx, dy, elapsed, options.canvas.clientHeight)) options.command("hard-drop");
       else if (Math.abs(dx) < 18 && Math.abs(dy) < 18) options.command("rotate-cw");
     }
     event.preventDefault();

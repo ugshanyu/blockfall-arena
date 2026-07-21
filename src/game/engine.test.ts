@@ -38,6 +38,14 @@ describe("BlockEngine", () => {
     expect(engine.snapshot().board.flat().filter(Boolean)).toHaveLength(4);
   });
 
+  it("moves exactly one row for a soft drop", () => {
+    const engine = new BlockEngine(10);
+    const before = engine.snapshot().active!.y;
+    expect(engine.command("soft-drop")).toBe(true);
+    expect(engine.snapshot().active!.y).toBe(before + 1);
+    expect(engine.snapshot().board.flat().filter(Boolean)).toHaveLength(0);
+  });
+
   it("holds a complete row for the clear animation before collapsing", () => {
     const engine = new BlockEngine(11);
     engine.restore(withGap(engine, 1));
