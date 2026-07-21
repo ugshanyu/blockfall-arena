@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head><meta charset="UTF-8"><title>Arena relay harness</title></head>
+  <body>
+    <output id="status">booting</output>
+    <button id="drop" type="button">Hard drop</button>
+    <script type="module">
+      import { ArenaSession } from "/src/arena-session.ts";
+      import { UsionBridge } from "/src/usion.ts";
+
+      const params = new URLSearchParams(location.search);
+      const playerId = params.get("player") || "host";
+      const channel = new BroadcastChannel("blockfall-arena-integration");
+      const handlers = {};
+      let sent = 0;
+
+      function relay(payload, reliable = false) {
+        sent += 1;
+        if (!reliable && sent % 20 === 0) return;
+        const jitter = (sent % 5) * 18;
+        setTimeout(() => channel.postMessage({ ...payload, sender: playerId }), 120 + jitter);
+      }
+
+      const game = {
+        connect: async () => ({}),
+        join: async () => {
+          handlers.joined?.({ player_id: playerId, player_ids: ["host", "guest"] });
+          relay({ kind: "join" }, true);
+          return { player_id: playerId, player_ids: ["host", "guest"] };
+        },
+        realtime(type, data) {
+          const reliable = ["arena_hello", "arena_roster", "arena_countdown", "arena_start", "arena_end"].includes(type);
+          relay({ kind: "realtime", type, data }, reliable);
+        },
+        onJoined: (callback) => (handlers.joined = callback, () => {}),
+        onPlayerJoined: (callback) => (handlers.playerJoined = callback, () => {}),
+        onPlayerLeft: (callback) => (handlers.playerLeft = callback, () => {}),
+        onRealtime: (callback) => (handlers.realtime = callback, () => {}),
+        onRoomAssigned: (callback) => (handlers.roomAssigned = callback, () => {}),
+        onConnectionState: (callback) => (handlers.connection = callback, () => {}),
+        onReconnected: (callback) => (handlers.reconnected = callback, () => {}),
+        onError: (callback) => (handlers.error = callback, () => {}),
+        saveState: () => true,
+        loadState: () => null
+      };
+
+      const api = {
+        config: { userId: playerId, userName: playerId, language: "en", theme: "dark", roomId: "integration-room", playerIds: ["host", "guest"], mode: "multiplayer" },
+        getLanguage: () => "en",
+        getTheme: () => "dark",
+        getLaunchParams: () => ({ roomId: "integration-room", mode: "multiplayer" }),
+        user: { getId: () => playerId, getName: () => playerId, getAvatar: () => "" },
+        storage: { get: async () => null, set: async () => true },
+        leaderboard: {},
+        game
+      };
+
+      const state = { roundStarted: false, countdown: -1, ended: false, events: 0, errors: [] };
+      const bridge = new UsionBridge(api.config, api);
+      const session = new ArenaSession(bridge, {
+        mode: () => render(),
+        event: () => { state.events += 1; render(); },
+        countdown: (seconds) => { state.countdown = seconds; render(); },
+        roundStart: () => { state.roundStarted = true; render(); },
+        roundEnd: () => { state.ended = true; render(); },
+        connection: () => render(),
+        error: (message) => { state.errors.push(message); render(); }
+      });
+
+      channel.onmessage = ({ data }) => {
+        if (!data || data.sender === playerId) return;
+        if (data.kind === "join") handlers.playerJoined?.({ player_id: data.sender, player_ids: ["host", "guest"] });
+        if (data.kind === "realtime") handlers.realtime?.({ player_id: data.sender, action_type: data.type, action_data: data.data });
+      };
+
+      function render() {
+        const opponent = [...session.opponents().values()][0];
+        document.querySelector("#status").textContent = JSON.stringify({
+          playerId,
+          arena: session.isArena(),
+          roundStarted: state.roundStarted,
+          countdown: state.countdown,
+          playerCount: session.playerCount(),
+          localScore: session.snapshot().score,
+          opponentScore: opponent?.score ?? null,
+          events: state.events,
+          ended: state.ended,
+          errors: state.errors
+        });
+      }
+
+      document.querySelector("#drop").addEventListener("click", () => session.command("hard-drop"));
+      session.start();
+      setInterval(() => { session.update(20); render(); }, 20);
+    </script>
+  </body>
+</html>
