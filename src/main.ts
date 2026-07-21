@@ -248,7 +248,6 @@ function bindControls(session: ArenaSession, audio: AudioEffects): void {
   const interacted = (): void => gestureHint.classList.add("dismissed");
   bindInput({ canvas, command, unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
   required<HTMLButtonElement>("#hold").addEventListener("click", () => { audio.unlock(); interacted(); command("hold"); });
-  required<HTMLButtonElement>("#rotate").addEventListener("click", () => { audio.unlock(); interacted(); command("rotate-cw"); });
   required<HTMLButtonElement>("#drop").addEventListener("click", () => { audio.unlock(); interacted(); command("hard-drop"); });
   pauseButton.addEventListener("click", () => togglePause(session));
   required<HTMLButtonElement>("#resume").addEventListener("click", () => resume(session));

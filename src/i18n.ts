@@ -1,6 +1,6 @@
 const translations = {
   en: {
-    score: "Score", lines: "Lines", level: "Level", hold: "Hold", next: "Next", rotate: "Rotate", drop: "Drop",
+    score: "Score", lines: "Lines", level: "Level", hold: "Hold", next: "Next", rotate: "Rotate", drop: "Down",
     gestureHint: "Drag to move · Tap to rotate · Swipe down to drop", reconnecting: "Reconnecting…",
     pausedLabel: "Stack frozen", paused: "Paused", resume: "Resume", runComplete: "Run complete",
     stackAgain: "Ready for another stack?", friends: "Friends", global: "Global", playAgain: "Play again",
@@ -9,7 +9,7 @@ const translations = {
     recordsEmpty: "No records yet", recordsLoading: "Loading records…", muted: "Sound off", unmuted: "Sound on", best: "Best {score}"
   },
   mn: {
-    score: "Оноо", lines: "Мөр", level: "Түвшин", hold: "Хадгалах", next: "Дараагийн", rotate: "Эргүүлэх", drop: "Унагах",
+    score: "Оноо", lines: "Мөр", level: "Түвшин", hold: "Хадгалах", next: "Дараагийн", rotate: "Эргүүлэх", drop: "Доош",
     gestureHint: "Чирж хөдөлгө · Товшиж эргүүл · Доош шударч унага", reconnecting: "Дахин холбогдож байна…",
     pausedLabel: "Өрөлт зогслоо", paused: "Түр зогсов", resume: "Үргэлжлүүлэх", runComplete: "Тоглолт дууслаа",
     stackAgain: "Дахин өрөх үү?", friends: "Найзууд", global: "Дэлхий", playAgain: "Дахин тоглох",

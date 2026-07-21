@@ -53,14 +53,15 @@ body::before {
 .icon-button { width: 38px; height: 38px; padding: 0; border-radius: 12px; border: 1px solid rgba(153, 166, 226, .17); background: rgba(14, 18, 45, .7); font-size: 17px; }
 .icon-button:disabled { opacity: .3; }
 
-.play-zone { grid-area: play; min-height: 0; display: flex; justify-content: center; align-items: center; gap: 7px; padding: 6px 8px; }
-.piece-rail { width: 48px; flex: 0 0 48px; display: flex; flex-direction: column; gap: 8px; padding-top: 5px; }
+.play-zone { position: relative; grid-area: play; min-height: 0; display: flex; justify-content: center; align-items: center; padding: 4px 0; }
+.piece-rail { position: absolute; z-index: 3; top: 10px; right: 7px; width: 48px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .piece-rail section { display: grid; place-items: center; gap: 3px; padding: 7px 2px; border: 1px solid rgba(143, 158, 222, .12); border-radius: 12px; background: rgba(7, 10, 31, .58); }
 .piece-rail canvas { display: block; width: 44px; height: auto; }
 
 .board-wrap {
   position: relative;
-  height: min(100%, calc((100vw - 72px) * 2));
+  height: min(100%, 200vw);
+  max-width: 100%;
   width: auto;
   aspect-ratio: 1 / 2;
   overflow: hidden;
@@ -109,12 +110,14 @@ body::before {
 .record-row b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .record-row strong { color: #f7dc82; font-variant-numeric: tabular-nums; }
 
-.touch-controls { grid-area: controls; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 7px 12px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(144, 158, 222, .13); background: rgba(5, 7, 22, .78); backdrop-filter: blur(14px); }
+.touch-controls { grid-area: controls; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; padding: 7px 8px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(144, 158, 222, .13); background: rgba(5, 7, 22, .78); backdrop-filter: blur(14px); }
 .touch-controls button { min-height: 54px; border: 1px solid rgba(151, 165, 226, .18); border-radius: 15px; background: linear-gradient(180deg, rgba(31, 38, 79, .88), rgba(15, 19, 47, .92)); display: grid; place-items: center; align-content: center; gap: 1px; box-shadow: inset 0 1px rgba(255,255,255,.07); }
 .touch-controls button:active { transform: translateY(1px); filter: brightness(1.2); }
 .touch-controls .drop { border-color: rgba(245, 205, 101, .34); background: linear-gradient(180deg, #5f4c37, #302b3c); }
 .touch-controls span { font-size: 22px; line-height: 1; }
 .touch-controls b { color: #9fa8cc; font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
+.touch-controls .hold-control { grid-template-columns: 76px auto; align-content: center; justify-content: center; column-gap: 5px; }
+.hold-control canvas { width: 76px; height: 54px; }
 
 .opponents { grid-area: opponents; display: flex; gap: 6px; overflow-x: auto; padding: 5px 8px 1px; scrollbar-width: none; }
 .opponents::-webkit-scrollbar { display: none; }

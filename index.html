@@ -25,8 +25,7 @@
         <aside id="opponents" class="opponents is-hidden" aria-label="Other players"></aside>
 
         <div class="play-zone">
-          <aside class="piece-rail" aria-label="Held and next pieces">
-            <section><span data-i18n="hold">Hold</span><canvas id="hold-canvas" width="96" height="72"></canvas></section>
+          <aside class="piece-rail" aria-label="Next pieces">
             <section><span data-i18n="next">Next</span><canvas id="next-canvas" width="96" height="216"></canvas></section>
           </aside>
 
@@ -65,8 +64,7 @@
         </div>
 
         <div class="touch-controls" aria-label="Touch controls">
-          <button id="hold" type="button"><span>◇</span><b data-i18n="hold">Hold</b></button>
-          <button id="rotate" type="button"><span>↻</span><b data-i18n="rotate">Rotate</b></button>
+          <button id="hold" class="hold-control" type="button"><canvas id="hold-canvas" width="96" height="72" aria-hidden="true"></canvas><b data-i18n="hold">Hold</b></button>
           <button id="drop" class="drop" type="button"><span>▼</span><b data-i18n="drop">Drop</b></button>
         </div>
       </section>

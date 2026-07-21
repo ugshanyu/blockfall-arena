@@ -21,14 +21,14 @@
   .stat { min-width: 78px; }
   .play-zone { align-items: center; padding: 12px 22px; gap: 12px; }
   .board-wrap { height: min(100%, 690px); }
-  .piece-rail { width: 74px; flex-basis: 74px; gap: 12px; }
+  .piece-rail { position: static; width: 74px; flex: 0 0 74px; gap: 12px; pointer-events: auto; }
   .piece-rail canvas { width: 62px; }
   .piece-rail section { padding: 10px 4px; }
   .opponents { align-content: start; display: grid; grid-template-columns: 1fr 1fr; overflow-y: auto; padding: 12px; border-right: 1px solid rgba(144, 158, 222, .12); }
   .opponent-card { width: 100%; height: 148px; display: grid; justify-items: center; align-content: center; text-align: center; }
   .opponent-card canvas { width: 54px; height: 108px; }
   .opponent-card div { width: 100%; }
-  .touch-controls { padding: 10px 22px 14px 108px; background: transparent; border-top: 0; }
+  .touch-controls { padding: 10px 22px 14px; background: transparent; border-top: 0; }
   .touch-controls button { min-height: 58px; }
   .gesture-hint { font-size: 11px; }
 }

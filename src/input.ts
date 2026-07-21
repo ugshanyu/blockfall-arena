@@ -9,12 +9,24 @@ interface BindOptions {
   interacted: () => void;
 }
 
+export type GestureAxis = "pending" | "horizontal" | "vertical";
+
+export function resolveGestureAxis(axis: GestureAxis, dx: number, dy: number, hasMoved = false): GestureAxis {
+  const threshold = 12;
+  const vertical = dy > threshold && dy > Math.abs(dx) * 1.15;
+  if (vertical && (axis === "pending" || (axis === "horizontal" && !hasMoved))) return "vertical";
+  if (axis !== "pending") return axis;
+  if (Math.abs(dx) > threshold && Math.abs(dx) > Math.abs(dy) * 1.35) return "horizontal";
+  return "pending";
+}
+
 export function bindInput(options: BindOptions): void {
   let pointerId = -1;
   let startX = 0;
   let startY = 0;
   let lastStep = 0;
   let startTime = 0;
+  let axis: GestureAxis = "pending";
 
   options.canvas.addEventListener("pointerdown", (event) => {
     if (pointerId >= 0) return;
@@ -23,6 +35,7 @@ export function bindInput(options: BindOptions): void {
     startY = event.clientY;
     lastStep = 0;
     startTime = performance.now();
+    axis = "pending";
     options.canvas.setPointerCapture(pointerId);
     options.unlockAudio();
     options.interacted();
@@ -31,8 +44,12 @@ export function bindInput(options: BindOptions): void {
 
   options.canvas.addEventListener("pointermove", (event) => {
     if (event.pointerId !== pointerId) return;
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+    axis = resolveGestureAxis(axis, dx, dy, lastStep !== 0);
+    if (axis !== "horizontal") { event.preventDefault(); return; }
     const cellWidth = Math.max(24, options.canvas.getBoundingClientRect().width / 10 * 0.72);
-    const step = Math.trunc((event.clientX - startX) / cellWidth);
+    const step = Math.trunc(dx / cellWidth);
     while (lastStep < step) { options.command("right"); lastStep += 1; }
     while (lastStep > step) { options.command("left"); lastStep -= 1; }
     event.preventDefault();
