@@ -146,3 +146,4 @@ export async function initializeUsion(): Promise<UsionBridge> {
 export interface ArenaWireInput { seq: number; command: Command }
 export interface ArenaWireState { roundId: number; players: Record<string, NetworkSnapshot>; ended: boolean; winnerId?: string }
 export interface ArenaWireEffect { roundId: number; playerId: string; event: GameEvent }
+export interface ArenaWireGarbage { roundId: number; id: number; targetId: string; holes: number[] }

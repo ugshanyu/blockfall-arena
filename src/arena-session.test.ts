@@ -160,6 +160,39 @@ describe("ArenaSession platform lifecycle", () => {
     expect(events.roundStart).toHaveBeenCalledOnce();
   });
 
+  it("never rolls back guest input when a delayed host snapshot arrives", () => {
+    const platform = mockPlatform("multiplayer", "guest");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    platform.handlers.realtime?.({
+      player_id: "host", action_type: "arena_start",
+      action_data: { roundId: 1, startAt: Date.now(), seed: 7, players: ["host", "guest"], lanes: 10 }
+    } as never);
+    const stale = session.local.networkSnapshot();
+    expect(session.command("right")).toBe(true);
+    const predictedX = session.snapshot().active?.x;
+    platform.handlers.realtime?.({
+      player_id: "host", action_type: "arena_state",
+      action_data: { roundId: 1, players: { guest: stale }, ended: false }
+    } as never);
+    expect(session.snapshot().active?.x).toBe(predictedX);
+  });
+
+  it("delivers authoritative garbage without replacing guest movement", () => {
+    const platform = mockPlatform("multiplayer", "guest");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    platform.handlers.realtime?.({
+      player_id: "host", action_type: "arena_start",
+      action_data: { roundId: 1, startAt: Date.now(), seed: 7, players: ["host", "guest"], lanes: 10 }
+    } as never);
+    platform.handlers.realtime?.({
+      player_id: "host", action_type: "arena_garbage",
+      action_data: { roundId: 1, id: 1, targetId: "guest", holes: [2, 4] }
+    } as never);
+    expect(session.snapshot().pendingGarbage).toBe(2);
+  });
+
   it("ends gracefully instead of migrating authority when the host leaves", () => {
     const platform = mockPlatform("multiplayer", "guest");
     const events = callbacks();

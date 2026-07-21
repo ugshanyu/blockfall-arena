@@ -4,7 +4,7 @@ import { BlockEngine } from "./game/engine";
 import { viewSnapshot } from "./game/network-view";
 import type { Command, GameEvent, GameSnapshot, LaneCount, NetworkSnapshot } from "./game/types";
 import { t } from "./i18n";
-import type { ArenaWireEffect, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
+import type { ArenaWireEffect, ArenaWireGarbage, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
 export class ArenaSession {
   readonly local = new BlockEngine();
   readonly players = new Map<string, PlayerInfo>();
@@ -26,6 +26,7 @@ export class ArenaSession {
   private connected = true;
   private lastCountdownSecond = -1;
   private seenEvents = new Map<string, number>();
+  private seenAttack = 0;
   constructor(private bridge: UsionBridge, private callbacks: ArenaCallbacks) {
     this.players.set(bridge.playerId, { name: bridge.playerName, avatar: bridge.playerAvatar });
     this.present.add(bridge.playerId);
@@ -72,7 +73,10 @@ export class ArenaSession {
         this.emit(item.playerId, item.event);
         this.send("arena_fx", { roundId: this.roundId, playerId: item.playerId, event: item.event } satisfies ArenaWireEffect);
       }
-      if (this.broadcastElapsed >= 110 || this.authority.ended) {
+      for (const attack of this.authority.drainAttacks()) {
+        this.send("arena_garbage", { roundId: this.roundId, ...attack } satisfies ArenaWireGarbage);
+      }
+      if (this.broadcastElapsed >= 160 || this.authority.ended) {
         this.broadcastElapsed = 0;
         this.broadcastState();
       }
@@ -191,6 +195,7 @@ export class ArenaSession {
     else if (message.action_type === "arena_rules" && !this.host && !this.roundActive && message.player_id === this.hostId) {
       this.local.reset(Date.now(), Number(data.lanes) === 4 ? 4 : 10);
     }
+    else if (message.action_type === "arena_garbage" && !this.host) this.receiveGarbage(data as unknown as ArenaWireGarbage);
     else if (message.action_type === "arena_countdown") this.receiveCountdown(data as unknown as CountdownMessage);
     else if (message.action_type === "arena_start" && !this.host) {
       const start = data as unknown as ArenaStartMessage;
@@ -235,6 +240,7 @@ export class ArenaSession {
     this.activeRound = message;
     this.inputSequence = 0;
     this.seenEvents.clear();
+    this.seenAttack = 0;
     const lanes = message.lanes === 4 ? 4 : 10;
     this.authority = new ArenaAuthority(message.players, message.seed, lanes, { id: this.bridge.playerId, engine: this.local });
     this.send("arena_start", message);
@@ -250,6 +256,7 @@ export class ArenaSession {
     this.activeRound = message;
     this.inputSequence = 0;
     this.seenEvents.clear();
+    this.seenAttack = 0;
     this.local.reset(message.seed, message.lanes === 4 ? 4 : 10);
     this.callbacks.roundStart();
   }
@@ -262,10 +269,16 @@ export class ArenaSession {
 
   private receiveState(state: ArenaWireState): void {
     if (state.roundId !== this.roundId) return;
-    const local = state.players[this.bridge.playerId];
-    if (local) this.local.restore(local);
+    // The guest simulates its own inputs immediately. Restoring a delayed host
+    // snapshot here visibly rolls the active piece backward on every packet.
     this.remote = new Map(Object.entries(state.players).filter(([id]) => id !== this.bridge.playerId));
     if (state.ended && !this.roundEnded) this.receiveEnd({ winnerId: state.winnerId, scores: Object.fromEntries(Object.entries(state.players).map(([id, item]) => [id, item.score])) });
+  }
+
+  private receiveGarbage(attack: ArenaWireGarbage): void {
+    if (attack.roundId !== this.roundId || attack.targetId !== this.bridge.playerId || attack.id <= this.seenAttack) return;
+    this.seenAttack = attack.id;
+    this.local.queueGarbage(attack.holes.length, attack.holes);
   }
 
   private finishHostRound(): void {

@@ -11,10 +11,13 @@ export interface AuthorityEvent {
   playerId: string;
   event: GameEvent;
 }
+export interface AuthorityAttack { id: number; targetId: string; holes: number[] }
 
 export class ArenaAuthority {
   private simulations = new Map<string, PlayerSimulation>();
   private events: AuthorityEvent[] = [];
+  private attacks: AuthorityAttack[] = [];
+  private attackId = 0;
   private random: SeededRandom;
   private didEnd = false;
   private startedWith: number;
@@ -73,6 +76,7 @@ export class ArenaAuthority {
   drainEvents(): AuthorityEvent[] {
     return this.events.splice(0);
   }
+  drainAttacks(): AuthorityAttack[] { return this.attacks.splice(0); }
 
   private collect(playerId: string, engine: BlockEngine): void {
     for (const event of engine.drainEvents()) {
@@ -94,6 +98,8 @@ export class ArenaAuthority {
     })[0]!;
     const holes = Array.from({ length: amount }, () => Math.floor(this.random.next() * 10));
     this.simulations.get(target)?.engine.queueGarbage(amount, holes);
+    this.attackId += 1;
+    this.attacks.push({ id: this.attackId, targetId: target, holes });
   }
 
   private checkWinner(): void {
