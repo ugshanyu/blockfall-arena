@@ -11,7 +11,7 @@ import {
   type GameEvent,
   type GamePhase,
   type GameSnapshot,
-  type NetworkSnapshot,
+  type NetworkSnapshot, type LaneCount,
   type PieceType
 } from "./types";
 
@@ -39,13 +39,16 @@ export class BlockEngine {
   lines = 0;
   level = 1;
   phase: GamePhase = "playing";
-  constructor(seed = Date.now()) {
+  lanes: LaneCount;
+  constructor(seed = Date.now(), lanes: LaneCount = 10) {
+    this.lanes = lanes;
     this.seed = seed >>> 0;
     this.random = new SeededRandom(this.seed);
     this.reset(this.seed);
   }
 
-  reset(seed = this.seed): void {
+  reset(seed = this.seed, lanes: LaneCount = this.lanes): void {
+    this.lanes = lanes;
     this.seed = seed >>> 0;
     this.random = new SeededRandom(this.seed);
     this.board = emptyBoard();
@@ -84,7 +87,7 @@ export class BlockEngine {
       if (!this.move(0, 1)) break;
     }
     if (!this.active || this.phase !== "playing") return;
-    if (collides(this.board, { ...this.active, y: this.active.y + 1 })) {
+    if (collides(this.board, { ...this.active, y: this.active.y + 1 }, this.lanes)) {
       this.lockElapsed += dt;
       if (this.lockElapsed >= LOCK_MS) this.lock();
     } else this.lockElapsed = 0;
@@ -117,7 +120,7 @@ export class BlockEngine {
   queueGarbage(count: number, holes?: number[]): void {
     for (let i = 0; i < Math.max(0, Math.min(8, count)); i += 1) {
       const requested = holes?.[i];
-      this.garbageHoles.push(requested === undefined ? Math.floor(this.random.next() * BOARD_WIDTH) : requested % BOARD_WIDTH);
+      this.garbageHoles.push(requested === undefined ? Math.floor(this.random.next() * this.lanes) : requested % this.lanes);
     }
   }
 
@@ -127,9 +130,10 @@ export class BlockEngine {
 
   snapshot(): GameSnapshot {
     return {
+      lanes: this.lanes,
       board: this.board.map((row) => [...row]),
       active: this.active ? { ...this.active } : null,
-      ghostY: this.active ? ghostY(this.board, this.active) : 0,
+      ghostY: this.active ? ghostY(this.board, this.active, this.lanes) : 0,
       hold: this.holdPiece,
       next: this.queue.slice(0, 6),
       score: this.score,
@@ -159,6 +163,7 @@ export class BlockEngine {
   }
 
   restore(snapshot: NetworkSnapshot): void {
+    this.lanes = snapshot.lanes ?? 10;
     this.board = decodeBoard(snapshot.board);
     this.active = snapshot.active ? { ...snapshot.active } : null;
     this.holdPiece = snapshot.hold;
@@ -201,13 +206,13 @@ export class BlockEngine {
     this.canHold = true;
     this.fallElapsed = 0;
     this.lockElapsed = 0;
-    if (collides(this.board, this.active)) this.endGame();
+    if (collides(this.board, this.active, this.lanes)) this.endGame();
   }
 
   private move(dx: number, dy: number): boolean {
     if (!this.active) return false;
     const moved = { ...this.active, x: this.active.x + dx, y: this.active.y + dy };
-    if (collides(this.board, moved)) return false;
+    if (collides(this.board, moved, this.lanes)) return false;
     this.active = moved;
     if (dx !== 0) this.lockElapsed = 0;
     return true;
@@ -218,7 +223,7 @@ export class BlockEngine {
     const rotation = (this.active.rotation + direction + 4) % 4;
     for (const [x, y] of kicks(this.active.type)) {
       const candidate = { ...this.active, rotation, x: this.active.x + x, y: this.active.y + y };
-      if (!collides(this.board, candidate)) {
+      if (!collides(this.board, candidate, this.lanes)) {
         this.active = candidate;
         this.lockElapsed = 0;
         return true;
@@ -257,7 +262,7 @@ export class BlockEngine {
     const toppedOut = lockPiece(this.board, this.active);
     this.active = null;
     if (toppedOut) return this.endGame();
-    this.clearRows = fullRows(this.board);
+    this.clearRows = fullRows(this.board, this.lanes);
     if (this.clearRows.length > 0) {
       this.phase = "clearing";
       this.clearElapsed = 0;
@@ -281,7 +286,7 @@ export class BlockEngine {
   private applyGarbage(): void {
     if (this.garbageHoles.length === 0) return;
     const holes = this.garbageHoles.splice(0);
-    const result = addGarbageRows(this.board, holes);
+    const result = addGarbageRows(this.board, holes, this.lanes);
     this.board = result.board;
     if (result.toppedOut) return this.endGame();
     this.pushEvent({ type: "garbage", count: holes.length });

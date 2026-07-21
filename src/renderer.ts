@@ -1,5 +1,5 @@
 import { cells, PIECE_ID } from "./game/pieces";
-import { BOARD_HEIGHT, BOARD_WIDTH, type Cell, type GameEvent, type GameSnapshot, type PieceType } from "./game/types";
+import { BOARD_HEIGHT, BOARD_WIDTH, laneStart, type Cell, type GameEvent, type GameSnapshot, type PieceType } from "./game/types";
 import type { Particle } from "./effects";
 
 const WIDTH = 300;
@@ -64,7 +64,7 @@ export class GameRenderer {
     ctx.clearRect(0, 0, WIDTH, HEIGHT);
     ctx.save();
     ctx.translate(sx, sy);
-    this.drawWell(ctx);
+    this.drawWell(ctx, snapshot);
     this.drawBoard(ctx, snapshot);
     this.drawPendingGarbage(ctx, snapshot.pendingGarbage, now);
     this.drawGhost(ctx, snapshot);
@@ -108,12 +108,20 @@ export class GameRenderer {
     this.particles = this.particles.filter((p) => p.life > 0).slice(-140);
   }
 
-  private drawWell(ctx: CanvasRenderingContext2D): void {
+  private drawWell(ctx: CanvasRenderingContext2D, snapshot: GameSnapshot): void {
     const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
     gradient.addColorStop(0, "rgba(4,7,23,.92)");
     gradient.addColorStop(1, "rgba(8,10,29,.98)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
+    if (snapshot.lanes === 4) {
+      const start = laneStart(4) * CELL;
+      ctx.fillStyle = "rgba(1,2,10,.78)";
+      ctx.fillRect(0, 0, start, HEIGHT);
+      ctx.fillRect(start + 4 * CELL, 0, WIDTH - start - 4 * CELL, HEIGHT);
+      ctx.strokeStyle = "rgba(255,224,122,.34)";
+      ctx.strokeRect(start, 0, 4 * CELL, HEIGHT);
+    }
     ctx.strokeStyle = "rgba(132,151,230,.07)";
     ctx.lineWidth = 1;
     for (let x = 1; x < BOARD_WIDTH; x += 1) { ctx.beginPath(); ctx.moveTo(x * CELL, 0); ctx.lineTo(x * CELL, HEIGHT); ctx.stroke(); }
@@ -267,6 +275,11 @@ export function drawMiniBoard(canvas: HTMLCanvasElement, snapshot?: GameSnapshot
   ctx.lineWidth = 0.5;
   for (let y = 1; y < BOARD_HEIGHT; y += 1) { ctx.beginPath(); ctx.moveTo(0, y * cell); ctx.lineTo(width, y * cell); ctx.stroke(); }
   if (!snapshot) return;
+  if (snapshot.lanes === 4) {
+    ctx.fillStyle = "rgba(1,2,10,.78)";
+    ctx.fillRect(0, 0, laneStart(4) * cell, canvas.height);
+    ctx.fillRect((laneStart(4) + 4) * cell, 0, laneStart(4) * cell, canvas.height);
+  }
   for (let y = 0; y < BOARD_HEIGHT; y += 1) for (let x = 0; x < BOARD_WIDTH; x += 1) {
     const value = snapshot.board[y]?.[x] as Cell;
     if (!value) continue;

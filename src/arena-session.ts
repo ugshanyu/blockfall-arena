@@ -2,7 +2,7 @@ import { ArenaAuthority } from "./arena-authority";
 import type { ArenaCallbacks, ArenaStartMessage, CountdownMessage, PlayerInfo } from "./arena-types";
 import { BlockEngine } from "./game/engine";
 import { viewSnapshot } from "./game/network-view";
-import type { Command, GameEvent, GameSnapshot, NetworkSnapshot } from "./game/types";
+import type { Command, GameEvent, GameSnapshot, LaneCount, NetworkSnapshot } from "./game/types";
 import { t } from "./i18n";
 import type { ArenaWireEffect, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
 export class ArenaSession {
@@ -107,6 +107,13 @@ export class ArenaSession {
   restartSolo(): void {
     if (!this.arenaMode) this.local.reset(Date.now());
   }
+  laneCount(): LaneCount { return this.local.lanes; }
+  setLanes(lanes: LaneCount): boolean {
+    if (this.roundActive || (this.arenaMode && !this.host)) return false;
+    this.local.reset(Date.now(), lanes);
+    if (this.arenaMode) this.send("arena_rules", { lanes });
+    return true;
+  }
 
   isArena(): boolean { return this.arenaMode; }
   isWaiting(): boolean { return this.arenaMode && !this.countdown && !this.roundActive; }
@@ -172,6 +179,7 @@ export class ArenaSession {
       this.players.set(message.player_id, { name: String(data.name || "Player"), avatar: String(data.avatar || "") });
       if (this.host) {
         this.sendRoster();
+        this.send("arena_rules", { lanes: this.local.lanes });
         if (this.roundActive && this.activeRound) {
           this.send("arena_start", { ...this.activeRound, targetId: message.player_id } satisfies ArenaStartMessage);
         } else {
@@ -180,6 +188,9 @@ export class ArenaSession {
         }
       }
     } else if (message.action_type === "arena_roster") this.receiveRoster(data);
+    else if (message.action_type === "arena_rules" && !this.host && !this.roundActive && message.player_id === this.hostId) {
+      this.local.reset(Date.now(), Number(data.lanes) === 4 ? 4 : 10);
+    }
     else if (message.action_type === "arena_countdown") this.receiveCountdown(data as unknown as CountdownMessage);
     else if (message.action_type === "arena_start" && !this.host) {
       const start = data as unknown as ArenaStartMessage;
@@ -201,7 +212,7 @@ export class ArenaSession {
   private scheduleCountdown(delay: number): void {
     const players = [...this.present].slice(0, 8);
     if (players.length < 2) return;
-    this.countdown = { roundId: this.roundId + 1, startAt: Date.now() + delay, seed: (Date.now() ^ (this.roundId + 1) * 2654435761) >>> 0, players };
+    this.countdown = { roundId: this.roundId + 1, startAt: Date.now() + delay, seed: (Date.now() ^ (this.roundId + 1) * 2654435761) >>> 0, players, lanes: this.local.lanes };
     this.lastCountdownSecond = -1;
     this.send("arena_countdown", this.countdown);
   }
@@ -212,7 +223,7 @@ export class ArenaSession {
   }
   private receiveCountdown(message: CountdownMessage): void {
     if (!message.players?.includes(this.bridge.playerId)) return;
-    this.countdown = message;
+    this.countdown = { ...message, lanes: message.lanes === 4 ? 4 : 10 };
     this.roundEnded = false;
   }
   private beginRound(message: CountdownMessage): void {
@@ -224,7 +235,8 @@ export class ArenaSession {
     this.activeRound = message;
     this.inputSequence = 0;
     this.seenEvents.clear();
-    this.authority = new ArenaAuthority(message.players, message.seed, { id: this.bridge.playerId, engine: this.local });
+    const lanes = message.lanes === 4 ? 4 : 10;
+    this.authority = new ArenaAuthority(message.players, message.seed, lanes, { id: this.bridge.playerId, engine: this.local });
     this.send("arena_start", message);
     this.callbacks.roundStart();
   }
@@ -238,7 +250,7 @@ export class ArenaSession {
     this.activeRound = message;
     this.inputSequence = 0;
     this.seenEvents.clear();
-    this.local.reset(message.seed);
+    this.local.reset(message.seed, message.lanes === 4 ? 4 : 10);
     this.callbacks.roundStart();
   }
   private broadcastState(): void {

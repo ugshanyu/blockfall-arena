@@ -17,6 +17,7 @@
           <div class="stat"><span data-i18n="score">Score</span><strong id="score">0</strong></div>
           <div class="stat"><span data-i18n="lines">Lines</span><strong id="lines">0</strong></div>
           <div class="stat"><span data-i18n="level">Level</span><strong id="level">1</strong></div>
+          <button id="solo-lanes" class="lane-pill" type="button" aria-label="Switch board width">10 lanes</button>
           <div id="arena-status" class="arena-status is-hidden"><i></i><span>Arena · 1/8</span></div>
           <button id="sound" class="icon-button" type="button" aria-label="Mute sound">♪</button>
           <button id="pause" class="icon-button" type="button" aria-label="Pause">Ⅱ</button>
@@ -40,6 +41,10 @@
                 <div class="waiting-blocks" aria-hidden="true"><i></i><i></i><i></i></div>
                 <strong data-i18n="waiting">Waiting for a rival…</strong>
                 <span id="waiting-count">1/8 players ready</span>
+                <div class="lane-choice" aria-label="Board width">
+                  <button id="arena-10" class="active" type="button">10 lanes</button>
+                  <button id="arena-4" type="button">4 lanes</button>
+                </div>
               </div>
             </div>
 

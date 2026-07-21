@@ -114,7 +114,7 @@ export class UsionBridge {
     try { return Math.max(this.loadBest(), Number((await this.api.leaderboard.me()).score) || 0); } catch { return this.loadBest(); }
   }
 
-  async submitScore(score: number, metadata: { mode: string; lines: number; level: number }): Promise<SavedRun> {
+  async submitScore(score: number, metadata: { mode: string; lanes?: number; lines: number; level: number }): Promise<SavedRun> {
     let best = Math.max(score, this.loadBest());
     let rank: number | undefined;
     this.saveBest(best);

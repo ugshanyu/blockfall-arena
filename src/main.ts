@@ -34,6 +34,9 @@ const reconnecting = required<HTMLElement>("#connection-overlay");
 const pauseButton = required<HTMLButtonElement>("#pause");
 const restartButton = required<HTMLButtonElement>("#restart");
 const soundButton = required<HTMLButtonElement>("#sound");
+const soloLanes = required<HTMLButtonElement>("#solo-lanes");
+const arena10 = required<HTMLButtonElement>("#arena-10");
+const arena4 = required<HTMLButtonElement>("#arena-4");
 
 let announceTimer = 0;
 let recordRequest = 0;
@@ -77,6 +80,7 @@ async function boot(): Promise<void> {
       show(opponentRoot, active);
       show(waitingOverlay, active);
       pauseButton.disabled = active;
+      show(soloLanes, !active);
       if (active) announce(t("waiting"));
     },
     event(playerId, event) {
@@ -110,6 +114,18 @@ async function boot(): Promise<void> {
   });
 
   session.start();
+  const updateLaneControls = (): void => {
+    const lanes = session.laneCount();
+    soloLanes.textContent = `${lanes} lanes`;
+    arena10.classList.toggle("active", lanes === 10);
+    arena4.classList.toggle("active", lanes === 4);
+    arena10.disabled = arena4.disabled = session.isArena() && !session.isHost();
+  };
+  const chooseLanes = (lanes: 4 | 10): void => { if (session.setLanes(lanes)) { endShown = false; show(endOverlay, false); updateLaneControls(); } };
+  soloLanes.addEventListener("click", () => chooseLanes(session.laneCount() === 10 ? 4 : 10));
+  arena10.addEventListener("click", () => chooseLanes(10));
+  arena4.addEventListener("click", () => chooseLanes(4));
+  updateLaneControls();
   installDevTools(session);
   bindControls(session, audio);
 
@@ -120,6 +136,7 @@ async function boot(): Promise<void> {
     last = now;
     session.update(delta);
     const snapshot = session.snapshot();
+    updateLaneControls();
     show(waitingOverlay, previewWaiting || session.isWaiting());
     waitingCount.textContent = t("readyCount", { count: previewPlayerCount ?? session.playerCount(), max: 8 });
     if (session.isRoundActive() && snapshot.pendingGarbage > previousPendingGarbage) {
@@ -151,13 +168,16 @@ async function boot(): Promise<void> {
     required<HTMLElement>("#end-title").textContent = finalScore.toLocaleString(bridge.language);
     required<HTMLElement>("#end-copy").textContent = arena ? t("nextRound") : t("stackAgain");
     restartButton.classList.toggle("is-hidden", arena);
+    show(required<HTMLElement>(".record-tabs"), !arena);
+    show(required<HTMLElement>("#records"), !arena);
+    if (arena) return;
     view.loading();
     const request = ++recordRequest;
-    void bridge.submitScore(finalScore, { mode: arena ? "arena" : "solo", lines: snapshot.lines, level: snapshot.level }).then((data) => {
+    void bridge.submitScore(finalScore, { mode: "solo", lanes: snapshot.lanes, lines: snapshot.lines, level: snapshot.level }).then((data) => {
       if (request !== recordRequest) return;
       view.show(data);
       const best = t("best", { score: data.best.toLocaleString(bridge.language) });
-      required<HTMLElement>("#end-copy").textContent = arena ? `${t("nextRound")} · ${best}` : best;
+      required<HTMLElement>("#end-copy").textContent = best;
     });
   }
 }
@@ -246,7 +266,7 @@ function bindControls(session: ArenaSession, audio: AudioEffects): void {
     else audio.move();
   };
   const interacted = (): void => gestureHint.classList.add("dismissed");
-  bindInput({ canvas, command, unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
+  bindInput({ canvas, command, lanes: () => session.laneCount(), unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
   required<HTMLButtonElement>("#hold").addEventListener("click", () => { audio.unlock(); interacted(); command("hold"); });
   required<HTMLButtonElement>("#drop").addEventListener("click", () => { audio.unlock(); interacted(); command("soft-drop"); });
   pauseButton.addEventListener("click", () => togglePause(session));

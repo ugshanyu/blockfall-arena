@@ -92,6 +92,11 @@ describe("BlockEngine", () => {
 });
 
 describe("ArenaAuthority", () => {
+  it("keeps four-lane simulations synchronized", () => {
+    const authority = new ArenaAuthority(["host", "guest"], 22, 4);
+    expect(authority.engine("host")?.snapshot().lanes).toBe(4);
+    expect(authority.engine("guest")?.snapshot().lanes).toBe(4);
+  });
   it("deduplicates input and sends four garbage rows for a four-line clear", () => {
     const hostEngine = new BlockEngine(22);
     const authority = new ArenaAuthority(["host", "guest"], 22, { id: "host", engine: hostEngine });

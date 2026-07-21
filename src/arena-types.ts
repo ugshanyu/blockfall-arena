@@ -1,4 +1,4 @@
-import type { GameEvent } from "./game/types";
+import type { GameEvent, LaneCount } from "./game/types";
 
 export interface PlayerInfo { name: string; avatar: string }
 
@@ -17,6 +17,7 @@ export interface CountdownMessage {
   startAt: number;
   seed: number;
   players: string[];
+  lanes?: LaneCount;
 }
 
 export interface ArenaStartMessage extends CountdownMessage {

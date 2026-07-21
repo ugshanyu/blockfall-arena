@@ -7,6 +7,7 @@ interface BindOptions {
   resume: () => void;
   unlockAudio: () => void;
   interacted: () => void;
+  lanes?: () => number;
 }
 
 export type GestureAxis = "pending" | "horizontal" | "vertical";
@@ -53,7 +54,7 @@ export function bindInput(options: BindOptions): void {
     const dy = event.clientY - startY;
     axis = resolveGestureAxis(axis, dx, dy, lastStep !== 0);
     if (axis !== "horizontal") { event.preventDefault(); return; }
-    const cellWidth = Math.max(24, options.canvas.getBoundingClientRect().width / 10 * 0.72);
+    const cellWidth = Math.max(24, options.canvas.getBoundingClientRect().width / (options.lanes?.() ?? 10) * 0.72);
     const step = Math.trunc(dx / cellWidth);
     while (lastStep < step) { options.command("right"); lastStep += 1; }
     while (lastStep > step) { options.command("left"); lastStep -= 1; }

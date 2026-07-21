@@ -1,5 +1,7 @@
 export const BOARD_WIDTH = 10;
 export const BOARD_HEIGHT = 20;
+export type LaneCount = 4 | 10;
+export function laneStart(lanes: LaneCount): number { return lanes === 4 ? 3 : 0; }
 
 export type PieceType = "I" | "O" | "T" | "S" | "Z" | "J" | "L";
 export type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
@@ -26,6 +28,7 @@ export interface GameEvent {
 }
 
 export interface GameSnapshot {
+  lanes: LaneCount;
   board: Cell[][];
   active: ActivePiece | null;
   ghostY: number;

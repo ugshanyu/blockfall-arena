@@ -1,6 +1,6 @@
 import { BlockEngine } from "./game/engine";
 import { SeededRandom } from "./game/random";
-import type { Command, GameEvent, NetworkSnapshot } from "./game/types";
+import type { Command, GameEvent, LaneCount, NetworkSnapshot } from "./game/types";
 
 interface PlayerSimulation {
   engine: BlockEngine;
@@ -20,12 +20,14 @@ export class ArenaAuthority {
   private startedWith: number;
   winnerId?: string;
 
-  constructor(readonly playerIds: string[], seed: number, local?: { id: string; engine: BlockEngine }) {
+  constructor(readonly playerIds: string[], seed: number, lanesOrLocal: LaneCount | { id: string; engine: BlockEngine } = 10, localArg?: { id: string; engine: BlockEngine }) {
+    const lanes = typeof lanesOrLocal === "number" ? lanesOrLocal : 10;
+    const local = typeof lanesOrLocal === "number" ? localArg : lanesOrLocal;
     this.random = new SeededRandom(seed ^ 0xa511e9b3);
     this.startedWith = playerIds.length;
     for (const id of playerIds.slice(0, 8)) {
-      const engine = local?.id === id ? local.engine : new BlockEngine(seed);
-      engine.reset(seed);
+      const engine = local?.id === id ? local.engine : new BlockEngine(seed, lanes);
+      engine.reset(seed, lanes);
       this.simulations.set(id, { engine, lastInput: 0 });
     }
   }
