@@ -35,12 +35,12 @@ export class GameRenderer {
   effect(event: GameEvent, snapshot: GameSnapshot): void {
     if (event.type === "clear") {
       this.clearRows = [...(event.rows ?? [])];
-      this.shake = 3 + (event.count ?? 1) * 1.8;
+      this.shake = 3 + (event.count ?? 1) * 1.8 + Math.max(0, (event.combo ?? 1) - 1) * 1.5;
       this.flash = 0.8;
       for (const row of this.clearRows) {
         for (let x = 0; x < BOARD_WIDTH; x += 1) {
           const color = COLORS[snapshot.board[row]?.[x] ?? 1] ?? "#fff";
-          for (let n = 0; n < 2; n += 1) this.spawnParticle(x * CELL + CELL / 2, row * CELL + CELL / 2, color);
+          for (let n = 0; n < 2 + Math.min(2, Math.max(0, (event.combo ?? 1) - 1)); n += 1) this.spawnParticle(x * CELL + CELL / 2, row * CELL + CELL / 2, color);
         }
       }
     } else if (event.type === "collapse") this.collapseAge = 0;

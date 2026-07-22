@@ -67,7 +67,7 @@ export class ArenaSession {
       this.emitLocalEvents();
       return;
     }
-    if (!this.roundActive) { this.maybeBeginCountdown(); return; }
+    if (!this.roundActive) return;
     if (this.host && this.authority) {
       this.authority.tick(deltaMs);
       this.broadcastElapsed += deltaMs;
@@ -94,7 +94,8 @@ export class ArenaSession {
       this.roundActive = false;
       this.roundEnded = false;
       this.endAnnounced = false;
-      this.scheduleCountdown(2500);
+      this.nextRoundAt = 0;
+      this.callbacks.waiting();
     }
   }
   command(command: Command): boolean {
@@ -122,6 +123,11 @@ export class ArenaSession {
       this.local.configureLanes(lanes);
       this.send("arena_rules", { lanes });
     } else this.local.reset(Date.now(), lanes);
+    return true;
+  }
+  startArena(): boolean {
+    if (!this.arenaMode || !this.host || this.roundActive || this.countdown || this.present.size < 2) return false;
+    this.scheduleCountdown(2200);
     return true;
   }
 
@@ -164,7 +170,6 @@ export class ArenaSession {
     if (!this.hostId && ids[0]) this.hostId = ids[0];
     this.host = this.hostId === this.bridge.playerId;
     this.sendHello();
-    if (this.host) this.maybeBeginCountdown();
   }
   private onPlayerJoined(playerId?: string, roster?: string[]): void {
     if (!this.hostId && roster?.[0]) this.hostId = roster[0];
@@ -172,7 +177,6 @@ export class ArenaSession {
     // A chat-card tap joins the socket before the friend's iframe is ready.
     // Only arena_hello marks a player ready, otherwise the countdown can be lost.
     this.sendHello();
-    if (this.host) this.maybeBeginCountdown();
   }
   private onPlayerLeft(playerId?: string, roster?: string[]): void {
     if (playerId) { this.present.delete(String(playerId)); this.remote.delete(String(playerId)); this.authority?.remove(String(playerId)); }
@@ -198,7 +202,6 @@ export class ArenaSession {
           this.send("arena_start", { ...this.activeRound, targetId: message.player_id } satisfies ArenaStartMessage);
         } else {
           this.refreshCountdown();
-          this.maybeBeginCountdown();
         }
       }
     } else if (message.action_type === "arena_roster") this.receiveRoster(data);
@@ -222,10 +225,6 @@ export class ArenaSession {
       const effect = data as unknown as ArenaWireEffect;
       if (effect.roundId === this.roundId) this.emit(effect.playerId, effect.event);
     } else if (message.action_type === "arena_end") this.receiveEnd(data);
-  }
-  private maybeBeginCountdown(): void {
-    if (!this.host || this.roundActive || this.countdown || this.present.size < 2) return;
-    this.scheduleCountdown(2800);
   }
   private scheduleCountdown(delay: number): void {
     const players = [...this.present].slice(0, 8);

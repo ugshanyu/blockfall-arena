@@ -36,6 +36,7 @@ const soundButton = required<HTMLButtonElement>("#sound");
 const soloLanes = required<HTMLButtonElement>("#solo-lanes");
 const arena10 = required<HTMLButtonElement>("#arena-10");
 const arena4 = required<HTMLButtonElement>("#arena-4");
+const arenaPlay = required<HTMLButtonElement>("#arena-play");
 
 let announceTimer = 0;
 let recordRequest = 0;
@@ -50,16 +51,14 @@ let previewPlayerCount: number | undefined;
 
 function show(element: HTMLElement, visible: boolean): void { element.classList.toggle("is-hidden", !visible); }
 
-function announce(message: string, strong = false): void {
+function announce(message: string, strong = false, combo = false): void {
   window.clearTimeout(announceTimer);
   callout.textContent = message;
   callout.classList.toggle("strong", strong);
+  callout.classList.remove("combo");
+  if (combo) { void callout.offsetWidth; callout.classList.add("combo"); }
   callout.classList.add("visible");
-  announceTimer = window.setTimeout(() => callout.classList.remove("visible"), strong ? 1500 : 900);
-}
-
-function clearMessage(count: number): string {
-  return t((count >= 4 ? "clear4" : count === 3 ? "clear3" : count === 2 ? "clear2" : "clear1") as "clear1");
+  announceTimer = window.setTimeout(() => callout.classList.remove("visible", "combo"), strong ? 1500 : 900);
 }
 
 async function boot(): Promise<void> {
@@ -87,7 +86,7 @@ async function boot(): Promise<void> {
       if (playerId === bridge.playerId) {
         renderer.effect(event, snapshot);
         audio.event(event);
-        if (event.type === "clear") announce(clearMessage(event.count ?? 1), true);
+        if (event.type === "clear" && (event.combo ?? 0) >= 2) announce(t("combo", { count: event.combo ?? 2 }), true, true);
         if (event.type === "game-over" && session.isRoundActive()) announce(t("eliminated"), true);
       } else if (event.type === "clear") opponents.pulse(playerId);
     },
@@ -108,6 +107,7 @@ async function boot(): Promise<void> {
       const localScore = Number(scores[bridge.playerId] ?? session.snapshot().score);
       finishRun(session.snapshot(), records, winnerId === bridge.playerId ? t("winner") : t("eliminated"), localScore, true);
     },
+    waiting() { show(endOverlay, false); endShown = false; },
     connection(state) { show(reconnecting, state === "disconnected" || state === "rejoining"); },
     error(message) { announce(message, true); }
   });
@@ -124,6 +124,7 @@ async function boot(): Promise<void> {
   soloLanes.addEventListener("click", () => chooseLanes(session.laneCount() === 10 ? 4 : 10));
   arena10.addEventListener("click", () => chooseLanes(10));
   arena4.addEventListener("click", () => chooseLanes(4));
+  arenaPlay.addEventListener("click", () => session.startArena());
   updateLaneControls();
   installDevTools(session);
   bindControls(session, audio);
@@ -138,6 +139,8 @@ async function boot(): Promise<void> {
     updateLaneControls();
     show(waitingOverlay, previewWaiting || session.isWaiting());
     waitingCount.textContent = t("readyCount", { count: previewPlayerCount ?? session.playerCount(), max: 8 });
+    show(arenaPlay, session.isHost());
+    arenaPlay.disabled = session.playerCount() < 2;
     if (session.isRoundActive() && snapshot.pendingGarbage > previousPendingGarbage) {
       announce(t("incoming", { count: snapshot.pendingGarbage - previousPendingGarbage }), true);
     }

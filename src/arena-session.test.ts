@@ -31,7 +31,7 @@ function mockPlatform(mode: "single" | "multiplayer" = "multiplayer", playerId =
 }
 
 function callbacks() {
-  return { mode: vi.fn(), event: vi.fn(), countdown: vi.fn(), roundStart: vi.fn(), roundEnd: vi.fn(), connection: vi.fn(), error: vi.fn() };
+  return { mode: vi.fn(), event: vi.fn(), countdown: vi.fn(), roundStart: vi.fn(), roundEnd: vi.fn(), waiting: vi.fn(), connection: vi.fn(), error: vi.fn() };
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -80,7 +80,7 @@ describe("ArenaSession platform lifecycle", () => {
     expect(platform.game.join).not.toHaveBeenCalled();
   });
 
-  it("waits for the friend's game to be ready before starting the countdown", () => {
+  it("waits for the host to press Play after the friend's game is ready", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-21T00:00:00Z"));
     const platform = mockPlatform("multiplayer", "host");
@@ -98,6 +98,8 @@ describe("ArenaSession platform lifecycle", () => {
       action_type: "arena_hello",
       action_data: { name: "Guest", avatar: "" }
     } as never);
+    expect(platform.game.realtime).not.toHaveBeenCalledWith("arena_countdown", expect.anything());
+    expect(session.startArena()).toBe(true);
     expect(platform.game.realtime).toHaveBeenCalledWith("arena_countdown", expect.objectContaining({
       roundId: 1, players: ["host", "guest"]
     }));
@@ -140,6 +142,7 @@ describe("ArenaSession platform lifecycle", () => {
     session.start();
     platform.handlers.joined?.({ player_id: "host", player_ids: ["host", "guest"] } as never);
     platform.handlers.realtime?.({ player_id: "guest", action_type: "arena_hello", action_data: { name: "Guest" } } as never);
+    expect(session.startArena()).toBe(true);
     vi.advanceTimersByTime(3000);
     session.update(3000);
     platform.game.realtime.mockClear();

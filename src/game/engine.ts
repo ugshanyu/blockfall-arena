@@ -37,6 +37,7 @@ export class BlockEngine {
   private seed: number;
   private roundElapsed = 0;
   private classicArena = false;
+  private combo = 0;
 
   score = 0;
   lines = 0;
@@ -73,6 +74,7 @@ export class BlockEngine {
     this.lockElapsed = 0;
     this.clearElapsed = 0;
     this.clearRows = [];
+    this.combo = 0;
     this.fillQueue();
     this.spawn();
   }
@@ -273,10 +275,14 @@ export class BlockEngine {
     if (toppedOut) return this.endGame();
     this.clearRows = fullRows(this.board, this.lanes);
     if (this.clearRows.length > 0) {
+      this.combo += 1;
       this.phase = "clearing";
       this.clearElapsed = 0;
-      this.pushEvent({ type: "clear", rows: [...this.clearRows], count: this.clearRows.length });
-    } else this.spawn();
+      this.pushEvent({ type: "clear", rows: [...this.clearRows], count: this.clearRows.length, combo: this.combo });
+    } else {
+      this.combo = 0;
+      this.spawn();
+    }
   }
 
   private finishClear(): void {

@@ -8,6 +8,7 @@ export interface ArenaCallbacks {
   countdown(seconds: number): void;
   roundStart(): void;
   roundEnd(winnerId: string | undefined, scores: Record<string, number>): void;
+  waiting(): void;
   connection(state: string): void;
   error(message: string): void;
 }

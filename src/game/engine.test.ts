@@ -63,6 +63,17 @@ describe("BlockEngine", () => {
     expect(engine.score).toBeGreaterThanOrEqual(100);
   });
 
+  it("marks only consecutive clears as combos", () => {
+    const engine = new BlockEngine(31);
+    engine.restore(withGap(engine, 1));
+    engine.command("hard-drop");
+    expect(engine.drainEvents().find((event) => event.type === "clear")?.combo).toBe(1);
+    engine.tick(300);
+    engine.restore(withGap(engine, 1));
+    engine.command("hard-drop");
+    expect(engine.drainEvents().find((event) => event.type === "clear")?.combo).toBe(2);
+  });
+
   it("round-trips compact board snapshots", () => {
     const engine = new BlockEngine(73);
     engine.command("hard-drop");

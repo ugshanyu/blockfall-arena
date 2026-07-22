@@ -20,6 +20,7 @@ export interface GameEvent {
   type: "clear" | "collapse" | "hard-drop" | "game-over" | "garbage";
   rows?: number[];
   count?: number;
+  combo?: number;
   fromY?: number;
   toY?: number;
   piece?: PieceType;
