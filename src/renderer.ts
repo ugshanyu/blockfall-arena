@@ -46,7 +46,12 @@ export class GameRenderer {
     } else if (event.type === "collapse") this.collapseAge = 0;
     else if (event.type === "hard-drop" && event.piece) {
       this.trail = { type: event.piece, rotation: event.rotation ?? 0, x: event.x ?? 3, fromY: event.fromY ?? 0, toY: event.toY ?? 0, age: 0 };
-      this.shake = 2.2;
+      this.shake = 3.2;
+      this.flash = Math.max(this.flash, 0.3);
+      const color = COLORS[PIECE_ID[event.piece]] ?? "#fff";
+      for (const [dx, dy] of cells(event.piece, event.rotation ?? 0)) {
+        for (let n = 0; n < 3; n += 1) this.spawnParticle(((event.x ?? 3) + dx) * CELL + CELL / 2, ((event.toY ?? 0) + dy) * CELL + CELL / 2, color);
+      }
     } else if (event.type === "garbage") {
       this.shake = 8;
       this.flash = 0.35;
@@ -95,7 +100,7 @@ export class GameRenderer {
     this.garbageLift *= Math.exp(-13 * dt);
     if (this.garbageLift < 0.1) this.garbageLift = 0;
     if (this.trail) {
-      this.trail.age += dt / 0.22;
+      this.trail.age += dt / 0.3;
       if (this.trail.age >= 1) this.trail = undefined;
     }
     for (const p of this.particles) {
@@ -189,11 +194,31 @@ export class GameRenderer {
 
   private drawTrail(ctx: CanvasRenderingContext2D): void {
     if (!this.trail) return;
-    const alpha = (1 - this.trail.age) * 0.22;
+    const life = 1 - this.trail.age;
+    const id = PIECE_ID[this.trail.type];
+    const color = COLORS[id] ?? "#fff";
     ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.fillStyle = COLORS[PIECE_ID[this.trail.type]]!;
-    for (const [dx, dy] of cells(this.trail.type, this.trail.rotation)) ctx.fillRect((this.trail.x + dx) * CELL + 5, (this.trail.fromY + dy) * CELL, CELL - 10, (this.trail.toY - this.trail.fromY + 1) * CELL);
+    ctx.globalCompositeOperation = "screen";
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 14;
+    for (const [dx, dy] of cells(this.trail.type, this.trail.rotation)) {
+      const x = (this.trail.x + dx) * CELL;
+      const top = Math.max(0, (this.trail.fromY + dy) * CELL);
+      const landingY = (this.trail.toY + dy) * CELL;
+      const bottom = landingY + CELL;
+      const gradient = ctx.createLinearGradient(0, top, 0, bottom);
+      gradient.addColorStop(0, "rgba(255,255,255,0)");
+      gradient.addColorStop(0.45, color);
+      gradient.addColorStop(1, "#fff");
+      ctx.globalAlpha = life * 0.55;
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x + 5, top, CELL - 10, Math.max(CELL, bottom - top));
+      ctx.globalAlpha = Math.min(1, life * 1.35);
+      this.drawTile(ctx, id, x, landingY, 1, 1);
+      ctx.strokeStyle = `rgba(255,255,255,${life * 0.9})`;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 2, landingY + 2, CELL - 4, CELL - 4);
+    }
     ctx.restore();
   }
 
