@@ -83,8 +83,6 @@ body::before {
 .callout { position: absolute; z-index: 8; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.9); padding: 8px 12px; opacity: 0; color: #fff; font-weight: 900; letter-spacing: .08em; text-align: center; text-shadow: 0 2px 16px #000; transition: opacity .16s, transform .18s; pointer-events: none; white-space: nowrap; }
 .callout.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 .callout.strong { font-size: 24px; color: #fff1b2; }
-.callout.combo { animation: combo-pop .65s cubic-bezier(.2,.9,.2,1); color: #fff3a4; text-shadow: 0 0 22px rgba(255,211,83,.8), 0 3px 18px #000; }
-@keyframes combo-pop { 0% { transform: translate(-50%,-50%) scale(.35) rotate(-6deg); } 55% { transform: translate(-50%,-50%) scale(1.22) rotate(2deg); } 100% { transform: translate(-50%,-50%) scale(1); } }
 .connection-overlay { position: absolute; z-index: 12; inset: 0; display: grid; place-items: center; background: rgba(3, 5, 17, .68); backdrop-filter: blur(4px); font-size: 13px; font-weight: 800; }
 .waiting-overlay { position: absolute; z-index: 9; inset: 0; display: grid; place-items: center; padding: 18px; background: rgba(3, 5, 17, .7); backdrop-filter: blur(5px); }
 .waiting-card { width: min(100%, 240px); padding: 24px 18px; display: grid; justify-items: center; gap: 8px; border: 1px solid rgba(167, 181, 247, .25); border-radius: 20px; background: linear-gradient(155deg, rgba(25, 30, 70, .94), rgba(8, 11, 32, .97)); box-shadow: 0 22px 60px rgba(0, 0, 0, .48); text-align: center; }

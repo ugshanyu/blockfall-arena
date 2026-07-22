@@ -51,14 +51,12 @@ let previewPlayerCount: number | undefined;
 
 function show(element: HTMLElement, visible: boolean): void { element.classList.toggle("is-hidden", !visible); }
 
-function announce(message: string, strong = false, combo = false): void {
+function announce(message: string, strong = false): void {
   window.clearTimeout(announceTimer);
   callout.textContent = message;
   callout.classList.toggle("strong", strong);
-  callout.classList.remove("combo");
-  if (combo) { void callout.offsetWidth; callout.classList.add("combo"); }
   callout.classList.add("visible");
-  announceTimer = window.setTimeout(() => callout.classList.remove("visible", "combo"), strong ? 1500 : 900);
+  announceTimer = window.setTimeout(() => callout.classList.remove("visible"), strong ? 1500 : 900);
 }
 
 async function boot(): Promise<void> {
@@ -86,7 +84,6 @@ async function boot(): Promise<void> {
       if (playerId === bridge.playerId) {
         renderer.effect(event, snapshot);
         audio.event(event);
-        if (event.type === "clear" && (event.combo ?? 0) >= 2) announce(t("combo", { count: event.combo ?? 2 }), true, true);
         if (event.type === "game-over" && session.isRoundActive()) announce(t("eliminated"), true);
       } else if (event.type === "clear") opponents.pulse(playerId);
     },

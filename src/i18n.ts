@@ -4,18 +4,16 @@ const translations = {
     gestureHint: "Drag to move · Tap to rotate · Swipe down to drop", keyboardHint: "Arrows move · Up rotates · Space drops · Shift holds", reconnecting: "Reconnecting…",
     pausedLabel: "Stack frozen", paused: "Paused", resume: "Resume", runComplete: "Run complete",
     stackAgain: "Ready for another stack?", friends: "Friends", global: "Global", playAgain: "Play again",
-    nextRound: "Next round", waiting: "Waiting for a rival…", ready: "READY", readyCount: "{count}/{max} players ready", incoming: "+{count} incoming", countdown: "Arena in {count}", hostLeft: "The arena host left", clear1: "Clean!",
-    clear2: "Double!", clear3: "Triple!", clear4: "BLOCKFALL!", winner: "Arena winner", eliminated: "Stack broken",
-    recordsEmpty: "No records yet", recordsLoading: "Loading records…", muted: "Sound off", unmuted: "Sound on", best: "Best {score}", playArena: "Play", combo: "{count}× COMBO!"
+    nextRound: "Next round", waiting: "Waiting for a rival…", ready: "READY", readyCount: "{count}/{max} players ready", incoming: "+{count} incoming", countdown: "Arena in {count}", hostLeft: "The arena host left", winner: "Arena winner", eliminated: "Stack broken",
+    recordsEmpty: "No records yet", recordsLoading: "Loading records…", muted: "Sound off", unmuted: "Sound on", best: "Best {score}", playArena: "Play"
   },
   mn: {
     score: "Оноо", lines: "Мөр", level: "Түвшин", hold: "Хадгалах", next: "Дараагийн", rotate: "Эргүүлэх", drop: "Доош",
     gestureHint: "Чирж хөдөлгө · Товшиж эргүүл · Доош шударч унага", keyboardHint: "Сумнуудаар хөдөлгө · Дээш эргүүл · Space унага · Shift хадгал", reconnecting: "Дахин холбогдож байна…",
     pausedLabel: "Өрөлт зогслоо", paused: "Түр зогсов", resume: "Үргэлжлүүлэх", runComplete: "Тоглолт дууслаа",
     stackAgain: "Дахин өрөх үү?", friends: "Найзууд", global: "Дэлхий", playAgain: "Дахин тоглох",
-    nextRound: "Дараагийн үе", waiting: "Өрсөлдөгч хүлээж байна…", ready: "БЭЛЭН", readyCount: "{count}/{max} тоглогч бэлэн", incoming: "+{count} мөр ирж байна", countdown: "Тулаан {count}", hostLeft: "Тулааны эзэн гарлаа", clear1: "Цэвэр!",
-    clear2: "Хос!", clear3: "Гурав!", clear4: "BLOCKFALL!", winner: "Тулааны ялагч", eliminated: "Өрөлт нурлаа",
-    recordsEmpty: "Одоогоор рекорд алга", recordsLoading: "Рекорд ачаалж байна…", muted: "Дуу хаалттай", unmuted: "Дуу нээлттэй", best: "Шилдэг {score}", playArena: "Тоглох", combo: "{count}× КОМБО!"
+    nextRound: "Дараагийн үе", waiting: "Өрсөлдөгч хүлээж байна…", ready: "БЭЛЭН", readyCount: "{count}/{max} тоглогч бэлэн", incoming: "+{count} мөр ирж байна", countdown: "Тулаан {count}", hostLeft: "Тулааны эзэн гарлаа", winner: "Тулааны ялагч", eliminated: "Өрөлт нурлаа",
+    recordsEmpty: "Одоогоор рекорд алга", recordsLoading: "Рекорд ачаалж байна…", muted: "Дуу хаалттай", unmuted: "Дуу нээлттэй", best: "Шилдэг {score}", playArena: "Тоглох"
   }
 } as const;
 
