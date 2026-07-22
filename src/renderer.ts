@@ -46,11 +46,7 @@ export class GameRenderer {
     } else if (event.type === "collapse") this.collapseAge = 0;
     else if (event.type === "hard-drop" && event.piece) {
       this.trail = { type: event.piece, rotation: event.rotation ?? 0, x: event.x ?? 3, fromY: event.fromY ?? 0, toY: event.toY ?? 0, age: 0 };
-      this.shake = 1.8;
-      const color = COLORS[PIECE_ID[event.piece]] ?? "#fff";
-      for (const [dx, dy] of cells(event.piece, event.rotation ?? 0)) {
-        this.spawnParticle(((event.x ?? 3) + dx) * CELL + CELL / 2, ((event.toY ?? 0) + dy) * CELL + CELL / 2, color);
-      }
+      this.shake = 0.8;
     } else if (event.type === "garbage") {
       this.shake = 8;
       this.flash = 0.35;
@@ -99,7 +95,7 @@ export class GameRenderer {
     this.garbageLift *= Math.exp(-13 * dt);
     if (this.garbageLift < 0.1) this.garbageLift = 0;
     if (this.trail) {
-      this.trail.age += dt / 0.18;
+      this.trail.age += dt / 0.11;
       if (this.trail.age >= 1) this.trail = undefined;
     }
     for (const p of this.particles) {
@@ -197,9 +193,6 @@ export class GameRenderer {
     const id = PIECE_ID[this.trail.type];
     const color = COLORS[id] ?? "#fff";
     ctx.save();
-    ctx.globalCompositeOperation = "lighter";
-    ctx.shadowColor = color;
-    ctx.shadowBlur = 6;
     for (const [dx, dy] of cells(this.trail.type, this.trail.rotation)) {
       const x = (this.trail.x + dx) * CELL;
       const top = Math.max(0, (this.trail.fromY + dy) * CELL);
@@ -209,10 +202,10 @@ export class GameRenderer {
       gradient.addColorStop(0, "rgba(255,255,255,0)");
       gradient.addColorStop(0.58, color);
       gradient.addColorStop(1, color);
-      ctx.globalAlpha = life * 0.3;
+      ctx.globalAlpha = life * 0.1;
       ctx.fillStyle = gradient;
       ctx.fillRect(x + 5, top, CELL - 10, Math.max(CELL, bottom - top));
-      ctx.globalAlpha = Math.min(0.72, life);
+      ctx.globalAlpha = Math.min(0.2, life * 0.28);
       this.drawTile(ctx, id, x, landingY, 1, 1);
     }
     ctx.restore();

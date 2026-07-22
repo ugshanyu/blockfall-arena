@@ -70,14 +70,15 @@ body::before {
   width: auto;
   aspect-ratio: 1 / 2;
   overflow: hidden;
-  border: 1px solid rgba(168, 182, 255, .25);
+  border: 0;
   border-radius: 15px;
   background: #050719;
-  box-shadow: 0 20px 70px rgba(0, 0, 0, .44), inset 0 0 28px rgba(96, 114, 214, .08);
-  transition: border-color .25s, box-shadow .25s;
+  box-shadow: 0 20px 70px rgba(0, 0, 0, .44);
+  transition: box-shadow .25s;
 }
-.board-wrap.danger { border-color: rgba(255, 99, 123, .52); box-shadow: 0 0 30px rgba(255, 67, 94, .14); }
+.board-wrap.danger { box-shadow: 0 0 30px rgba(255, 67, 94, .14); }
 #game-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; -webkit-touch-callout: none; -webkit-user-drag: none; }
+#game-canvas:focus, #game-canvas:focus-visible { outline: none; }
 #game-canvas:active { cursor: grabbing; }
 
 .callout { position: absolute; z-index: 8; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.9); padding: 8px 12px; opacity: 0; color: #fff; font-weight: 900; letter-spacing: .08em; text-align: center; text-shadow: 0 2px 16px #000; transition: opacity .16s, transform .18s; pointer-events: none; white-space: nowrap; }

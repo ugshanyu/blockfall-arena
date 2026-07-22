@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isHardDropGesture, resolveGestureAxis } from "./input";
+import { horizontalRepeatDelay, isHardDropGesture, resolveGestureAxis } from "./input";
 
 describe("touch gesture intent", () => {
   it("locks a downward swipe before incidental horizontal drift can move the piece", () => {
@@ -20,5 +20,13 @@ describe("touch gesture intent", () => {
 
   it("accepts a deliberate long vertical swipe", () => {
     expect(isHardDropGesture(12, 140, 420, 700)).toBe(true);
+  });
+});
+
+describe("keyboard horizontal acceleration", () => {
+  it("accelerates repeat speed the longer a side key is held", () => {
+    expect(horizontalRepeatDelay(200)).toBe(45);
+    expect(horizontalRepeatDelay(600)).toBe(30);
+    expect(horizontalRepeatDelay(1000)).toBe(18);
   });
 });

@@ -26,6 +26,12 @@ export function isHardDropGesture(dx: number, dy: number, elapsedMs: number, can
   return elapsedMs < 650 && dy > distance && dy > Math.abs(dx) * 1.4;
 }
 
+export function horizontalRepeatDelay(elapsedMs: number): number {
+  if (elapsedMs >= 900) return 18;
+  if (elapsedMs >= 450) return 30;
+  return 45;
+}
+
 export function bindInput(options: BindOptions): void {
   let pointerId = -1;
   let startX = 0;
@@ -33,6 +39,27 @@ export function bindInput(options: BindOptions): void {
   let lastStep = 0;
   let startTime = 0;
   let axis: GestureAxis = "pending";
+  let horizontalTimer: number | undefined;
+  let horizontalHeld: "left" | "right" | undefined;
+  let horizontalStarted = 0;
+
+  const stopHorizontal = (): void => {
+    if (horizontalTimer !== undefined) window.clearTimeout(horizontalTimer);
+    horizontalTimer = undefined;
+    horizontalHeld = undefined;
+  };
+  const repeatHorizontal = (): void => {
+    if (!horizontalHeld) return;
+    options.command(horizontalHeld);
+    horizontalTimer = window.setTimeout(repeatHorizontal, horizontalRepeatDelay(performance.now() - horizontalStarted));
+  };
+  const startHorizontal = (command: "left" | "right"): void => {
+    stopHorizontal();
+    horizontalHeld = command;
+    horizontalStarted = performance.now();
+    options.command(command);
+    horizontalTimer = window.setTimeout(repeatHorizontal, 145);
+  };
 
   options.canvas.addEventListener("pointerdown", (event) => {
     if (pointerId >= 0) return;
@@ -81,10 +108,16 @@ export function bindInput(options: BindOptions): void {
 
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      if (event.repeat) return;
+      options.unlockAudio();
+      options.interacted();
+      startHorizontal(event.key === "ArrowLeft" ? "left" : "right");
+      return;
+    }
     let command: Command | undefined;
-    if (event.key === "ArrowLeft") command = "left";
-    else if (event.key === "ArrowRight") command = "right";
-    else if (event.key === "ArrowDown") command = "soft-drop";
+    if (event.key === "ArrowDown") command = "soft-drop";
     else if (event.key === "ArrowUp" || key === "x") command = "rotate-cw";
     else if (key === "z") command = "rotate-ccw";
     else if (key === "c" || event.key === "Shift") command = "hold";
@@ -97,4 +130,8 @@ export function bindInput(options: BindOptions): void {
     options.command(command);
     event.preventDefault();
   });
+  window.addEventListener("keyup", (event) => {
+    if ((event.key === "ArrowLeft" && horizontalHeld === "left") || (event.key === "ArrowRight" && horizontalHeld === "right")) stopHorizontal();
+  });
+  window.addEventListener("blur", stopHorizontal);
 }
