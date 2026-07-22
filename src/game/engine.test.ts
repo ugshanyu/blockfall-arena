@@ -132,4 +132,17 @@ describe("ArenaAuthority", () => {
     expect(authority.ended).toBe(true);
     expect(authority.winnerId).toBe("a");
   });
+
+  it("cancels a false elimination when a current checkpoint arrives", () => {
+    const authority = new ArenaAuthority(["host", "guest"], 12);
+    const guest = authority.engine("guest")!;
+    const live = guest.networkSnapshot();
+    guest.restore({ ...live, active: null, phase: "game-over" });
+    authority.tick(300);
+    expect(authority.ended).toBe(false);
+    expect(authority.reconcile("guest", 1, live)).toBe(true);
+    authority.tick(700);
+    expect(authority.ended).toBe(false);
+    expect(authority.reconcile("guest", 1, { ...live, score: 999 })).toBe(false);
+  });
 });

@@ -4,7 +4,7 @@ import { BlockEngine } from "./game/engine";
 import { viewSnapshot } from "./game/network-view";
 import type { Command, GameEvent, GameSnapshot, LaneCount, NetworkSnapshot } from "./game/types";
 import { t } from "./i18n";
-import type { ArenaWireEffect, ArenaWireGarbage, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
+import type { ArenaWireCheckpoint, ArenaWireEffect, ArenaWireGarbage, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
 export class ArenaSession {
   readonly local = new BlockEngine();
   readonly players = new Map<string, PlayerInfo>();
@@ -27,6 +27,8 @@ export class ArenaSession {
   private lastCountdownSecond = -1;
   private seenEvents = new Map<string, number>();
   private seenAttack = 0;
+  private checkpointElapsed = 0;
+  private checkpointSequence = 0;
   constructor(private bridge: UsionBridge, private callbacks: ArenaCallbacks) {
     this.players.set(bridge.playerId, { name: bridge.playerName, avatar: bridge.playerAvatar });
     this.present.add(bridge.playerId);
@@ -84,6 +86,8 @@ export class ArenaSession {
     } else if (!this.host && !this.roundEnded) {
       this.local.tick(deltaMs);
       this.emitLocalEvents();
+      this.checkpointElapsed += deltaMs;
+      if (this.checkpointElapsed >= 150) this.sendCheckpoint();
     }
     if (this.host && this.roundEnded && this.nextRoundAt && Date.now() >= this.nextRoundAt) {
       this.authority = undefined;
@@ -210,6 +214,9 @@ export class ArenaSession {
     else if (message.action_type === "arena_input" && this.host && this.authority) {
       const input = data as unknown as ArenaWireInput;
       this.authority.input(message.player_id, Number(input.seq), input.command);
+    } else if (message.action_type === "arena_checkpoint" && this.host && this.authority) {
+      const checkpoint = data as unknown as ArenaWireCheckpoint;
+      if (checkpoint.roundId === this.roundId) this.authority.reconcile(message.player_id, Number(checkpoint.seq), checkpoint.snapshot);
     } else if (message.action_type === "arena_state" && !this.host) this.receiveState(data as unknown as ArenaWireState);
     else if (message.action_type === "arena_fx") {
       const effect = data as unknown as ArenaWireEffect;
@@ -247,6 +254,8 @@ export class ArenaSession {
     this.inputSequence = 0;
     this.seenEvents.clear();
     this.seenAttack = 0;
+    this.checkpointElapsed = 0;
+    this.checkpointSequence = 0;
     const lanes = message.lanes === 4 ? 4 : 10;
     this.authority = new ArenaAuthority(message.players, message.seed, lanes, { id: this.bridge.playerId, engine: this.local });
     this.send("arena_start", message);
@@ -263,6 +272,8 @@ export class ArenaSession {
     this.inputSequence = 0;
     this.seenEvents.clear();
     this.seenAttack = 0;
+    this.checkpointElapsed = 0;
+    this.checkpointSequence = 0;
     this.local.reset(message.seed, message.lanes === 4 ? 4 : 10, true);
     this.callbacks.roundStart();
   }
@@ -285,6 +296,12 @@ export class ArenaSession {
     if (attack.roundId !== this.roundId || attack.targetId !== this.bridge.playerId || attack.id <= this.seenAttack) return;
     this.seenAttack = attack.id;
     this.local.queueGarbage(attack.holes.length, attack.holes);
+  }
+
+  private sendCheckpoint(): void {
+    this.checkpointElapsed = 0;
+    this.checkpointSequence += 1;
+    this.send("arena_checkpoint", { roundId: this.roundId, seq: this.checkpointSequence, snapshot: this.local.networkSnapshot() } satisfies ArenaWireCheckpoint);
   }
 
   private finishHostRound(): void {

@@ -205,6 +205,21 @@ describe("ArenaSession platform lifecycle", () => {
     expect(session.snapshot().pendingGarbage).toBe(2);
   });
 
+  it("sends compact guest checkpoints so the host mini-board stays current", () => {
+    const platform = mockPlatform("multiplayer", "guest");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    platform.handlers.realtime?.({
+      player_id: "host", action_type: "arena_start",
+      action_data: { roundId: 1, startAt: Date.now(), seed: 7, players: ["host", "guest"], lanes: 10 }
+    } as never);
+    platform.game.realtime.mockClear();
+    session.update(150);
+    expect(platform.game.realtime).toHaveBeenCalledWith("arena_checkpoint", expect.objectContaining({
+      roundId: 1, seq: 1, snapshot: expect.objectContaining({ board: expect.any(String) })
+    }));
+  });
+
   it("ends gracefully instead of migrating authority when the host leaves", () => {
     const platform = mockPlatform("multiplayer", "guest");
     const events = callbacks();
