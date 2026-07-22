@@ -1,7 +1,7 @@
 const translations = {
   en: {
     score: "Score", lines: "Lines", level: "Level", hold: "Hold", next: "Next", rotate: "Rotate", drop: "Down",
-    gestureHint: "Drag to move · Tap to rotate · Swipe down to drop", reconnecting: "Reconnecting…",
+    gestureHint: "Drag to move · Tap to rotate · Swipe down to drop", keyboardHint: "Arrows move · Up rotates · Space drops · Shift holds", reconnecting: "Reconnecting…",
     pausedLabel: "Stack frozen", paused: "Paused", resume: "Resume", runComplete: "Run complete",
     stackAgain: "Ready for another stack?", friends: "Friends", global: "Global", playAgain: "Play again",
     nextRound: "Next round", waiting: "Waiting for a rival…", ready: "READY", readyCount: "{count}/{max} players ready", incoming: "+{count} incoming", countdown: "Arena in {count}", hostLeft: "The arena host left", clear1: "Clean!",
@@ -10,7 +10,7 @@ const translations = {
   },
   mn: {
     score: "Оноо", lines: "Мөр", level: "Түвшин", hold: "Хадгалах", next: "Дараагийн", rotate: "Эргүүлэх", drop: "Доош",
-    gestureHint: "Чирж хөдөлгө · Товшиж эргүүл · Доош шударч унага", reconnecting: "Дахин холбогдож байна…",
+    gestureHint: "Чирж хөдөлгө · Товшиж эргүүл · Доош шударч унага", keyboardHint: "Сумнуудаар хөдөлгө · Дээш эргүүл · Space унага · Shift хадгал", reconnecting: "Дахин холбогдож байна…",
     pausedLabel: "Өрөлт зогслоо", paused: "Түр зогсов", resume: "Үргэлжлүүлэх", runComplete: "Тоглолт дууслаа",
     stackAgain: "Дахин өрөх үү?", friends: "Найзууд", global: "Дэлхий", playAgain: "Дахин тоглох",
     nextRound: "Дараагийн үе", waiting: "Өрсөлдөгч хүлээж байна…", ready: "БЭЛЭН", readyCount: "{count}/{max} тоглогч бэлэн", incoming: "+{count} мөр ирж байна", countdown: "Тулаан {count}", hostLeft: "Тулааны эзэн гарлаа", clear1: "Цэвэр!",

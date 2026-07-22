@@ -42,6 +42,7 @@ export function bindInput(options: BindOptions): void {
     lastStep = 0;
     startTime = performance.now();
     axis = "pending";
+    options.canvas.focus?.({ preventScroll: true });
     options.canvas.setPointerCapture(pointerId);
     options.unlockAudio();
     options.interacted();

@@ -81,6 +81,7 @@ body::before {
 #game-canvas:active { cursor: grabbing; }
 
 .gesture-hint { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); width: max-content; max-width: 90%; padding: 7px 10px; border-radius: 20px; color: #cbd1ee; background: rgba(5, 7, 21, .76); backdrop-filter: blur(9px); font-size: 10px; transition: opacity .4s, transform .4s; pointer-events: none; }
+.keyboard-hint { display: none; }
 .gesture-hint.dismissed { opacity: 0; transform: translate(-50%, 8px); }
 .callout { position: absolute; z-index: 8; left: 50%; top: 42%; transform: translate(-50%, -50%) scale(.9); padding: 8px 12px; opacity: 0; color: #fff; font-weight: 900; letter-spacing: .08em; text-align: center; text-shadow: 0 2px 16px #000; transition: opacity .16s, transform .18s; pointer-events: none; white-space: nowrap; }
 .callout.visible { opacity: 1; transform: translate(-50%, -50%) scale(1); }
