@@ -1,4 +1,4 @@
-# Blockfall Arena
+# Tetris
 
 A mobile-first falling-block game for Usion. It starts immediately in solo mode, supports host-authoritative arena matches for up to eight players, and submits earned scores to Usion records.
 
