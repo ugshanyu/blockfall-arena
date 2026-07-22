@@ -97,6 +97,15 @@ describe("ArenaAuthority", () => {
     expect(authority.engine("host")?.snapshot().lanes).toBe(4);
     expect(authority.engine("guest")?.snapshot().lanes).toBe(4);
   });
+
+  it("uses one clean garbage hole throughout an arena attack", () => {
+    const hostEngine = new BlockEngine(22);
+    const authority = new ArenaAuthority(["host", "guest"], 22, { id: "host", engine: hostEngine });
+    hostEngine.restore(withGap(hostEngine, 4));
+    authority.input("host", 1, "hard-drop");
+    const attack = authority.drainAttacks()[0];
+    expect(new Set(attack?.holes).size).toBe(1);
+  });
   it("deduplicates input and sends four garbage rows for a four-line clear", () => {
     const hostEngine = new BlockEngine(22);
     const authority = new ArenaAuthority(["host", "guest"], 22, { id: "host", engine: hostEngine });

@@ -120,6 +120,18 @@ describe("ArenaSession platform lifecycle", () => {
     expect(session.readyOpponentIds()).toEqual(["guest"]);
   });
 
+  it("keeps the board inert when the host selects waiting-room lanes", () => {
+    const platform = mockPlatform("multiplayer", "host");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    expect(session.setLanes(4)).toBe(true);
+    const snapshot = session.snapshot();
+    expect(snapshot.lanes).toBe(4);
+    expect(snapshot.active).toBeNull();
+    expect(snapshot.board.flat().every((cell) => cell === 0)).toBe(true);
+    expect(platform.game.realtime).toHaveBeenCalledWith("arena_rules", { lanes: 4 });
+  });
+
   it("resends an active round when a participating friend's iframe remounts", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-07-21T00:00:00Z"));

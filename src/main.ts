@@ -23,7 +23,6 @@ const score = required<HTMLElement>("#score");
 const lines = required<HTMLElement>("#lines");
 const level = required<HTMLElement>("#level");
 const callout = required<HTMLElement>("#callout");
-const gestureHint = required<HTMLElement>("#gesture-hint");
 const pauseOverlay = required<HTMLElement>("#pause-overlay");
 const endOverlay = required<HTMLElement>("#end-overlay");
 const waitingOverlay = required<HTMLElement>("#waiting-overlay");
@@ -265,7 +264,7 @@ function bindControls(session: ArenaSession, audio: AudioEffects): void {
     else if (value === "hard-drop") audio.drop(Math.max(1, before.ghostY - (before.active?.y ?? 0)));
     else audio.move();
   };
-  const interacted = (): void => gestureHint.classList.add("dismissed");
+  const interacted = (): void => undefined;
   bindInput({ canvas, command, lanes: () => session.laneCount(), unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
   required<HTMLButtonElement>("#hold").addEventListener("click", () => { audio.unlock(); interacted(); command("hold"); });
   required<HTMLButtonElement>("#drop").addEventListener("click", () => { audio.unlock(); interacted(); command("soft-drop"); });

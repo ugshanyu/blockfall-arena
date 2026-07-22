@@ -1,6 +1,7 @@
 import { BlockEngine } from "./game/engine";
 import { SeededRandom } from "./game/random";
 import type { Command, GameEvent, LaneCount, NetworkSnapshot } from "./game/types";
+import { classicAttackLines } from "./classic-rules";
 
 interface PlayerSimulation {
   engine: BlockEngine;
@@ -18,6 +19,7 @@ export class ArenaAuthority {
   private events: AuthorityEvent[] = [];
   private attacks: AuthorityAttack[] = [];
   private attackId = 0;
+  private elapsedMs = 0;
   private random: SeededRandom;
   private didEnd = false;
   private startedWith: number;
@@ -30,7 +32,7 @@ export class ArenaAuthority {
     this.startedWith = playerIds.length;
     for (const id of playerIds.slice(0, 8)) {
       const engine = local?.id === id ? local.engine : new BlockEngine(seed, lanes);
-      engine.reset(seed, lanes);
+      engine.reset(seed, lanes, true);
       this.simulations.set(id, { engine, lastInput: 0 });
     }
   }
@@ -39,6 +41,7 @@ export class ArenaAuthority {
 
   tick(deltaMs: number): void {
     if (this.didEnd) return;
+    this.elapsedMs += Math.max(0, deltaMs);
     for (const [id, simulation] of this.simulations) {
       simulation.engine.tick(deltaMs);
       this.collect(id, simulation.engine);
@@ -86,7 +89,8 @@ export class ArenaAuthority {
   }
 
   private attack(sourceId: string, cleared: number): void {
-    const amount = cleared === 2 ? 1 : cleared === 3 ? 2 : cleared >= 4 ? 4 : 0;
+    const base = cleared === 2 ? 1 : cleared === 3 ? 2 : cleared >= 4 ? 4 : 0;
+    const amount = classicAttackLines(base, this.elapsedMs);
     if (!amount) return;
     const alive = this.playerIds.filter((id) => id !== sourceId && this.simulations.get(id)?.engine.phase !== "game-over");
     if (alive.length === 0) return;
@@ -96,7 +100,8 @@ export class ArenaAuthority {
       const distanceB = (this.playerIds.indexOf(b) - sourceIndex + this.playerIds.length) % this.playerIds.length;
       return distanceA - distanceB;
     })[0]!;
-    const holes = Array.from({ length: amount }, () => Math.floor(this.random.next() * 10));
+    const hole = Math.floor(this.random.next() * 10);
+    const holes = Array.from({ length: amount }, () => hole);
     this.simulations.get(target)?.engine.queueGarbage(amount, holes);
     this.attackId += 1;
     this.attacks.push({ id: this.attackId, targetId: target, holes });

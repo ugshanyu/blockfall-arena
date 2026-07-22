@@ -114,8 +114,10 @@ export class ArenaSession {
   laneCount(): LaneCount { return this.local.lanes; }
   setLanes(lanes: LaneCount): boolean {
     if (this.roundActive || (this.arenaMode && !this.host)) return false;
-    this.local.reset(Date.now(), lanes);
-    if (this.arenaMode) this.send("arena_rules", { lanes });
+    if (this.arenaMode) {
+      this.local.configureLanes(lanes);
+      this.send("arena_rules", { lanes });
+    } else this.local.reset(Date.now(), lanes);
     return true;
   }
 
@@ -125,7 +127,11 @@ export class ArenaSession {
   isHost(): boolean { return this.host; }
   playerCount(): number { return this.present.size; }
   readyOpponentIds(): string[] { return [...this.present].filter((id) => id !== this.bridge.playerId); }
-  snapshot(): GameSnapshot { return this.local.snapshot(); }
+  snapshot(): GameSnapshot {
+    const snapshot = this.local.snapshot();
+    if (!this.arenaMode || this.roundActive) return snapshot;
+    return { ...snapshot, board: snapshot.board.map((row) => row.map(() => 0)), active: null, ghostY: 0, hold: null, next: [], score: 0, lines: 0, level: 1, phase: "paused" };
+  }
   opponents(): Map<string, GameSnapshot> {
     const result = new Map<string, GameSnapshot>();
     const snapshots = this.host && this.authority ? this.authority.snapshots() : Object.fromEntries(this.remote);
@@ -193,7 +199,7 @@ export class ArenaSession {
       }
     } else if (message.action_type === "arena_roster") this.receiveRoster(data);
     else if (message.action_type === "arena_rules" && !this.host && !this.roundActive && message.player_id === this.hostId) {
-      this.local.reset(Date.now(), Number(data.lanes) === 4 ? 4 : 10);
+      this.local.configureLanes(Number(data.lanes) === 4 ? 4 : 10);
     }
     else if (message.action_type === "arena_garbage" && !this.host) this.receiveGarbage(data as unknown as ArenaWireGarbage);
     else if (message.action_type === "arena_countdown") this.receiveCountdown(data as unknown as CountdownMessage);
@@ -257,7 +263,7 @@ export class ArenaSession {
     this.inputSequence = 0;
     this.seenEvents.clear();
     this.seenAttack = 0;
-    this.local.reset(message.seed, message.lanes === 4 ? 4 : 10);
+    this.local.reset(message.seed, message.lanes === 4 ? 4 : 10, true);
     this.callbacks.roundStart();
   }
   private broadcastState(): void {

@@ -2,6 +2,7 @@ import { decodeBoard, encodeBoard } from "./codec";
 import { addGarbageRows, collides, emptyBoard, fullRows, ghostY, lockPiece, removeRows } from "./board";
 import { kicks, PIECES } from "./pieces";
 import { SeededRandom } from "./random";
+import { classicGravity } from "../classic-rules";
 import {
   BOARD_HEIGHT,
   BOARD_WIDTH,
@@ -34,6 +35,8 @@ export class BlockEngine {
   private events: GameEvent[] = [];
   private eventId = 0;
   private seed: number;
+  private roundElapsed = 0;
+  private classicArena = false;
 
   score = 0;
   lines = 0;
@@ -47,8 +50,10 @@ export class BlockEngine {
     this.reset(this.seed);
   }
 
-  reset(seed = this.seed, lanes: LaneCount = this.lanes): void {
+  reset(seed = this.seed, lanes: LaneCount = this.lanes, classicArena = false): void {
     this.lanes = lanes;
+    this.classicArena = classicArena;
+    this.roundElapsed = 0;
     this.seed = seed >>> 0;
     this.random = new SeededRandom(this.seed);
     this.board = emptyBoard();
@@ -74,6 +79,7 @@ export class BlockEngine {
 
   tick(deltaMs: number): void {
     const dt = Math.min(100, Math.max(0, deltaMs));
+    if (this.phase === "playing" || this.phase === "clearing") this.roundElapsed += dt;
     if (this.phase === "clearing") {
       this.clearElapsed += dt;
       if (this.clearElapsed >= CLEAR_MS) this.finishClear();
@@ -81,7 +87,9 @@ export class BlockEngine {
     }
     if (this.phase !== "playing" || !this.active) return;
     this.fallElapsed += dt;
-    const interval = Math.max(72, 820 * Math.pow(0.84, this.level - 1));
+    const interval = this.classicArena
+      ? 1000 / (60 * classicGravity(this.roundElapsed))
+      : Math.max(72, 820 * Math.pow(0.84, this.level - 1));
     while (this.fallElapsed >= interval && this.phase === "playing") {
       this.fallElapsed -= interval;
       if (!this.move(0, 1)) break;
@@ -127,6 +135,7 @@ export class BlockEngine {
   drainEvents(): GameEvent[] {
     return this.events.splice(0);
   }
+  configureLanes(lanes: LaneCount): void { this.lanes = lanes; }
 
   snapshot(): GameSnapshot {
     return {
