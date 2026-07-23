@@ -3,7 +3,7 @@ import { AudioEffects } from "./effects";
 import { decodeBoard, encodeBoard } from "./game/codec";
 import { LANE_COUNTS, laneStart, type Command, type GameEvent, type GameSnapshot, type LaneCount } from "./game/types";
 import { applyTranslations, setLanguage, t } from "./i18n";
-import { bindActionButton, bindInput } from "./input";
+import { bindActionButton, bindDragActionButton, bindInput } from "./input";
 import { OpponentGrid } from "./opponents";
 import { RecordsView } from "./records";
 import { GameRenderer } from "./renderer";
@@ -274,9 +274,10 @@ function bindControls(session: ArenaSession, audio: AudioEffects): void {
     else audio.move();
   };
   const interacted = (): void => undefined;
+  const touchCommand = (value: Command): void => { audio.unlock(); interacted(); command(value); };
   bindInput({ canvas, command, lanes: () => session.laneCount(), unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
-  bindActionButton(required<HTMLButtonElement>("#hold"), () => { audio.unlock(); interacted(); command("hold"); });
-  bindActionButton(required<HTMLButtonElement>("#drop"), () => { audio.unlock(); interacted(); command("soft-drop"); });
+  bindDragActionButton(required<HTMLButtonElement>("#hold"), () => touchCommand("hold"), touchCommand);
+  bindActionButton(required<HTMLButtonElement>("#drop"), () => touchCommand("soft-drop"));
   required<HTMLButtonElement>("#resume").addEventListener("click", () => resume(session));
   restartButton.addEventListener("click", () => {
     recordRequest += 1;

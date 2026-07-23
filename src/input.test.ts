@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { horizontalDragDistance, horizontalRepeatDelay, isHardDropGesture, resolveGestureAxis } from "./input";
+import { controlDragSteps, horizontalDragDistance, horizontalRepeatDelay, isHardDropGesture, resolveGestureAxis } from "./input";
 
 describe("touch gesture intent", () => {
   it("locks a downward swipe before incidental horizontal drift can move the piece", () => {
@@ -25,6 +25,15 @@ describe("touch gesture intent", () => {
   it("requires a deliberate horizontal drag before moving a lane", () => {
     expect(horizontalDragDistance(320, 4)).toBeCloseTo(67.2);
     expect(horizontalDragDistance(320, 10)).toBeCloseTo(28);
+  });
+
+  it("keeps small movement on the Hold control as a tap", () => {
+    expect(controlDragSteps(17, 17)).toEqual({ horizontal: 0, down: 0 });
+  });
+
+  it("turns a Hold-control drag into horizontal and downward cell steps", () => {
+    expect(controlDragSteps(48, 63)).toEqual({ horizontal: 2, down: 3 });
+    expect(controlDragSteps(-48, 63)).toEqual({ horizontal: -2, down: 3 });
   });
 });
 

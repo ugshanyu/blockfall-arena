@@ -36,6 +36,23 @@ export function horizontalDragDistance(boardWidth: number, lanes: number): numbe
   return Math.max(28, boardWidth / Math.max(1, lanes) * 0.84);
 }
 
+export interface ControlDragSteps {
+  horizontal: number;
+  down: number;
+}
+
+export function controlDragSteps(dx: number, dy: number): ControlDragSteps {
+  const activation = 18;
+  const steps = (distance: number, spacing: number): number => {
+    if (Math.abs(distance) < activation) return 0;
+    return Math.sign(distance) * (1 + Math.floor((Math.abs(distance) - activation) / spacing));
+  };
+  return {
+    horizontal: Math.max(-10, Math.min(10, steps(dx, 28))),
+    down: Math.max(0, Math.min(20, steps(dy, 22)))
+  };
+}
+
 export function bindActionButton(button: HTMLButtonElement, action: () => void): void {
   let pointerId = -1;
   let startX = 0;
@@ -66,6 +83,68 @@ export function bindActionButton(button: HTMLButtonElement, action: () => void):
       return;
     }
     action();
+  });
+  button.addEventListener("contextmenu", (event) => event.preventDefault());
+  button.addEventListener("selectstart", (event) => event.preventDefault());
+  button.addEventListener("dragstart", (event) => event.preventDefault());
+}
+
+export function bindDragActionButton(
+  button: HTMLButtonElement,
+  tapAction: () => void,
+  dragAction: (command: "left" | "right" | "soft-drop") => void
+): void {
+  let pointerId = -1;
+  let startX = 0;
+  let startY = 0;
+  let horizontalStep = 0;
+  let downStep = 0;
+  let dragged = false;
+  let suppressClickUntil = 0;
+
+  const applyDrag = (clientX: number, clientY: number): void => {
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+    if (Math.hypot(dx, dy) >= 18) dragged = true;
+    const target = controlDragSteps(dx, dy);
+    while (horizontalStep < target.horizontal) { dragAction("right"); horizontalStep += 1; }
+    while (horizontalStep > target.horizontal) { dragAction("left"); horizontalStep -= 1; }
+    while (downStep < target.down) { dragAction("soft-drop"); downStep += 1; }
+    button.classList.toggle("is-dragging", dragged);
+  };
+  button.addEventListener("pointerdown", (event) => {
+    if (pointerId >= 0) return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    horizontalStep = 0;
+    downStep = 0;
+    dragged = false;
+    button.setPointerCapture?.(pointerId);
+    event.preventDefault();
+  });
+  button.addEventListener("pointermove", (event) => {
+    if (event.pointerId !== pointerId) return;
+    applyDrag(event.clientX, event.clientY);
+    event.preventDefault();
+  });
+  const finish = (event: PointerEvent, cancelled: boolean): void => {
+    if (event.pointerId !== pointerId) return;
+    if (!cancelled) applyDrag(event.clientX, event.clientY);
+    pointerId = -1;
+    suppressClickUntil = performance.now() + 500;
+    button.classList.remove("is-dragging");
+    if (!cancelled && !dragged) tapAction();
+    event.preventDefault();
+  };
+  button.addEventListener("pointerup", (event) => finish(event, false));
+  button.addEventListener("pointercancel", (event) => finish(event, true));
+  button.addEventListener("click", (event) => {
+    if (performance.now() < suppressClickUntil) {
+      event.preventDefault();
+      return;
+    }
+    tapAction();
   });
   button.addEventListener("contextmenu", (event) => event.preventDefault());
   button.addEventListener("selectstart", (event) => event.preventDefault());
