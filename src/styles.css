@@ -7,7 +7,7 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-* { box-sizing: border-box; -webkit-touch-callout: none; -webkit-user-drag: none; -webkit-user-select: none; user-select: none; }
+* { box-sizing: border-box; -webkit-touch-callout: none !important; -webkit-user-drag: none; -webkit-user-select: none !important; user-select: none !important; }
 html, body, #app { width: 100%; height: 100%; margin: 0; overflow: hidden; }
 button { font: inherit; color: inherit; }
 button:focus-visible { outline: 2px solid #aab7ff; outline-offset: 2px; }
@@ -37,22 +37,19 @@ body::before {
   align-items: center;
   min-height: 54px;
   padding: 6px 10px;
-  gap: 8px;
+  justify-content: center;
+  gap: clamp(46px, 18vw, 92px);
   border-bottom: 1px solid rgba(150, 163, 224, .13);
   background: linear-gradient(180deg, rgba(5, 8, 25, .91), rgba(5, 8, 24, .57));
   backdrop-filter: blur(14px);
 }
 
-.stat { min-width: 52px; display: grid; gap: 1px; }
+.stat { min-width: 62px; display: grid; justify-items: center; gap: 1px; }
 .stat span, .piece-rail span { color: #9299b8; font-size: 9px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
 .stat strong { font-size: 17px; font-variant-numeric: tabular-nums; }
-.arena-status { margin-left: auto; display: flex; align-items: center; gap: 6px; color: #bfc6e8; font-size: 11px; font-weight: 700; }
+.arena-status { flex: 0 0 auto; display: flex; align-items: center; gap: 5px; color: #bfc6e8; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .arena-status i { width: 7px; height: 7px; border-radius: 50%; background: #69e8a8; box-shadow: 0 0 10px #69e8a8; }
-.hud #sound { margin-left: auto; }
-.arena-status:not(.is-hidden) ~ #sound { margin-left: 0; }
-.icon-button { width: 38px; height: 38px; padding: 0; border-radius: 12px; border: 1px solid rgba(153, 166, 226, .17); background: rgba(14, 18, 45, .7); font-size: 17px; }
-.icon-button:disabled { opacity: .3; }
-.lane-pill { min-height: 34px; padding: 0 9px; border: 1px solid rgba(153,166,226,.2); border-radius: 11px; background: rgba(14,18,45,.72); color: #c9cff0; font-size: 10px; font-weight: 800; }
+.lane-pill { flex: 0 0 auto; min-height: 42px; padding: 0 9px; border: 1px solid rgba(153,166,226,.2); border-radius: 11px; background: rgba(14,18,45,.72); color: #c9cff0; font-size: 10px; font-weight: 800; }
 .lane-choice { display: grid; width: 100%; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 7px; }
 .lane-choice button { min-height: 38px; border: 1px solid rgba(153,166,226,.2); border-radius: 11px; background: rgba(5,8,25,.65); color: #aeb6da; font-size: 11px; font-weight: 850; }
 .lane-choice button.active { border-color: #ffe07a; background: rgba(244,191,76,.16); color: #ffe9a6; }
@@ -63,23 +60,24 @@ body::before {
   grid-area: play;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(64px, 20vw, 84px);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   justify-content: center;
   align-items: stretch;
-  gap: 7px;
+  gap: 5px;
   padding: 5px 7px;
 }
-.side-rail { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 7px; overflow: hidden; }
-.piece-rail { z-index: 3; width: 100%; flex: 0 0 auto; pointer-events: none; }
-.piece-rail section { display: grid; place-items: center; gap: 3px; padding: 7px 2px; border: 1px solid rgba(143, 158, 222, .12); border-radius: 12px; background: rgba(7, 10, 31, .58); }
-.piece-rail canvas { display: block; width: min(100%, 66px); height: auto; }
+.top-rail { z-index: 3; width: min(100%, 560px); min-width: 0; min-height: 58px; justify-self: center; display: flex; align-items: center; gap: 6px; overflow: hidden; }
+.piece-rail { flex: 0 0 76px; height: 52px; display: grid; grid-template-columns: 25px 1fr; place-items: center; gap: 1px; padding: 3px; border: 1px solid rgba(143, 158, 222, .12); border-radius: 11px; background: rgba(7, 10, 31, .58); pointer-events: none; }
+.piece-rail span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 8px; }
+.piece-rail canvas { display: block; width: 48px; height: auto; }
 
 .board-wrap {
   position: relative;
   height: min(100%, 200vw);
   max-width: 100%;
   width: auto;
-  justify-self: end;
+  justify-self: center;
   align-self: center;
   aspect-ratio: 1 / 2;
   overflow: hidden;
@@ -90,7 +88,7 @@ body::before {
   transition: box-shadow .25s;
 }
 .board-wrap.danger { box-shadow: 0 0 30px rgba(255, 67, 94, .14); }
-#game-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; -webkit-touch-callout: none; -webkit-user-drag: none; }
+#game-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; -webkit-touch-callout: none !important; -webkit-user-drag: none; -webkit-user-select: none !important; user-select: none !important; }
 #game-canvas:focus, #game-canvas:focus-visible { outline: none; }
 #game-canvas:active { cursor: grabbing; }
 
@@ -130,20 +128,19 @@ body::before {
 .record-row strong { color: #f7dc82; font-variant-numeric: tabular-nums; }
 
 .touch-controls { grid-area: controls; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; padding: 7px 8px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(144, 158, 222, .13); background: rgba(5, 7, 22, .78); backdrop-filter: blur(14px); }
-.touch-controls button { min-height: 54px; border: 1px solid rgba(151, 165, 226, .18); border-radius: 15px; background: linear-gradient(180deg, rgba(31, 38, 79, .88), rgba(15, 19, 47, .92)); display: grid; place-items: center; align-content: center; gap: 1px; box-shadow: inset 0 1px rgba(255,255,255,.07); }
+.touch-controls button { position: relative; min-height: 54px; border: 1px solid rgba(151, 165, 226, .18); border-radius: 15px; background: linear-gradient(180deg, rgba(31, 38, 79, .88), rgba(15, 19, 47, .92)); display: grid; place-items: center; align-content: center; gap: 1px; box-shadow: inset 0 1px rgba(255,255,255,.07); touch-action: manipulation; -webkit-touch-callout: none !important; -webkit-user-select: none !important; user-select: none !important; }
+.touch-controls button > * { pointer-events: none; }
 .touch-controls button:active { transform: translateY(1px); filter: brightness(1.2); }
-.touch-controls .drop { border-color: rgba(245, 205, 101, .34); background: linear-gradient(180deg, #5f4c37, #302b3c); }
 .touch-controls span { font-size: 22px; line-height: 1; }
 .touch-controls b { color: #9fa8cc; font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
-.touch-controls .hold-control { position: relative; display: grid; place-items: center; overflow: hidden; }
+.touch-controls .hold-control { overflow: hidden; }
 .hold-control canvas { width: 76px; height: 54px; }
-.hold-control b { position: absolute; right: 10px; bottom: 7px; }
 
-.opponents { min-height: 0; display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; overflow-y: auto; padding: 0; scrollbar-width: none; }
+.opponents { min-width: 0; height: 52px; display: flex; flex: 1 1 auto; gap: 5px; overflow-x: auto; overflow-y: hidden; padding: 0; scrollbar-width: none; }
 .opponents::-webkit-scrollbar { display: none; }
-.opponent-card { flex: 0 0 auto; min-height: 96px; display: grid; justify-items: center; align-content: center; gap: 3px; padding: 5px 3px; overflow: hidden; border: 1px solid rgba(143, 158, 222, .13); border-radius: 10px; background: rgba(7, 10, 29, .72); text-align: center; transition: opacity .2s; }
-.opponent-card canvas { width: 34px; height: 68px; border-radius: 3px; }
-.opponent-card div { width: 100%; min-width: 0; display: grid; gap: 2px; }
+.opponent-card { flex: 0 0 72px; height: 52px; display: grid; grid-template-columns: 22px minmax(0, 1fr); align-items: center; gap: 4px; padding: 3px 4px; overflow: hidden; border: 1px solid rgba(143, 158, 222, .13); border-radius: 10px; background: rgba(7, 10, 29, .72); text-align: left; transition: opacity .2s; }
+.opponent-card canvas { width: 22px; height: 44px; border-radius: 3px; }
+.opponent-card div { min-width: 0; display: grid; gap: 2px; }
 .opponent-card b { overflow: hidden; color: #dce0f5; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .opponent-card span { color: #efce73; font-size: 9px; font-variant-numeric: tabular-nums; }
 .opponent-card.is-ready { border-color: rgba(105, 232, 168, .3); }

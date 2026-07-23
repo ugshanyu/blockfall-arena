@@ -32,6 +32,46 @@ export function horizontalRepeatDelay(elapsedMs: number): number {
   return 45;
 }
 
+export function horizontalDragDistance(boardWidth: number, lanes: number): number {
+  return Math.max(28, boardWidth / Math.max(1, lanes) * 0.84);
+}
+
+export function bindActionButton(button: HTMLButtonElement, action: () => void): void {
+  let pointerId = -1;
+  let startX = 0;
+  let startY = 0;
+  let suppressClickUntil = 0;
+  button.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse") return;
+    pointerId = event.pointerId;
+    startX = event.clientX;
+    startY = event.clientY;
+    button.setPointerCapture?.(event.pointerId);
+    event.preventDefault();
+  });
+  button.addEventListener("pointerup", (event) => {
+    if (event.pointerId !== pointerId) return;
+    pointerId = -1;
+    suppressClickUntil = performance.now() + 500;
+    if (Math.hypot(event.clientX - startX, event.clientY - startY) < 18) action();
+    event.preventDefault();
+  });
+  button.addEventListener("pointercancel", (event) => {
+    if (event.pointerId === pointerId) pointerId = -1;
+    event.preventDefault();
+  });
+  button.addEventListener("click", (event) => {
+    if (performance.now() < suppressClickUntil) {
+      event.preventDefault();
+      return;
+    }
+    action();
+  });
+  button.addEventListener("contextmenu", (event) => event.preventDefault());
+  button.addEventListener("selectstart", (event) => event.preventDefault());
+  button.addEventListener("dragstart", (event) => event.preventDefault());
+}
+
 export function bindInput(options: BindOptions): void {
   let pointerId = -1;
   let startX = 0;
@@ -82,7 +122,7 @@ export function bindInput(options: BindOptions): void {
     const dy = event.clientY - startY;
     axis = resolveGestureAxis(axis, dx, dy, lastStep !== 0);
     if (axis !== "horizontal") { event.preventDefault(); return; }
-    const cellWidth = Math.max(24, options.canvas.getBoundingClientRect().width / (options.lanes?.() ?? 10) * 0.72);
+    const cellWidth = horizontalDragDistance(options.canvas.getBoundingClientRect().width, options.lanes?.() ?? 10);
     const step = Math.trunc(dx / cellWidth);
     while (lastStep < step) { options.command("right"); lastStep += 1; }
     while (lastStep > step) { options.command("left"); lastStep -= 1; }
@@ -105,6 +145,8 @@ export function bindInput(options: BindOptions): void {
   options.canvas.addEventListener("pointerup", (event) => finish(event, false));
   options.canvas.addEventListener("pointercancel", (event) => finish(event, true));
   options.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+  options.canvas.addEventListener("selectstart", (event) => event.preventDefault());
+  options.canvas.addEventListener("dragstart", (event) => event.preventDefault());
 
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();

@@ -108,7 +108,7 @@ export class GameRenderer {
     }
     ctx.restore();
     this.drawPreview(this.holdCanvas, snapshot.hold ? [snapshot.hold] : [], 1);
-    this.drawPreview(this.nextCanvas, snapshot.next.slice(0, 3), 3);
+    this.drawPreview(this.nextCanvas, snapshot.next.slice(0, 1), 1);
   }
 
   private resize(): void {

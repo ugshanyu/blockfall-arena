@@ -3,7 +3,7 @@ import { AudioEffects } from "./effects";
 import { decodeBoard, encodeBoard } from "./game/codec";
 import { LANE_COUNTS, laneStart, type Command, type GameEvent, type GameSnapshot, type LaneCount } from "./game/types";
 import { applyTranslations, setLanguage, t } from "./i18n";
-import { bindInput } from "./input";
+import { bindActionButton, bindInput } from "./input";
 import { OpponentGrid } from "./opponents";
 import { RecordsView } from "./records";
 import { GameRenderer } from "./renderer";
@@ -20,7 +20,6 @@ function required<T extends HTMLElement>(selector: string): T {
 const canvas = required<HTMLCanvasElement>("#game-canvas");
 const boardWrap = required<HTMLElement>("#board-wrap");
 const score = required<HTMLElement>("#score");
-const lines = required<HTMLElement>("#lines");
 const level = required<HTMLElement>("#level");
 const callout = required<HTMLElement>("#callout");
 const pauseOverlay = required<HTMLElement>("#pause-overlay");
@@ -30,9 +29,7 @@ const waitingCount = required<HTMLElement>("#waiting-count");
 const arenaStatus = required<HTMLElement>("#arena-status");
 const opponentRoot = required<HTMLElement>("#opponents");
 const reconnecting = required<HTMLElement>("#connection-overlay");
-const pauseButton = required<HTMLButtonElement>("#pause");
 const restartButton = required<HTMLButtonElement>("#restart");
-const soundButton = required<HTMLButtonElement>("#sound");
 const soloLanes = required<HTMLButtonElement>("#solo-lanes");
 const arena10 = required<HTMLButtonElement>("#arena-10");
 const arena8 = required<HTMLButtonElement>("#arena-8");
@@ -76,7 +73,6 @@ async function boot(): Promise<void> {
       show(arenaStatus, active);
       show(opponentRoot, active);
       show(waitingOverlay, active);
-      pauseButton.disabled = active;
       show(soloLanes, !active);
       if (active) announce(t("waiting"));
     },
@@ -275,20 +271,14 @@ function bindControls(session: ArenaSession, audio: AudioEffects): void {
   };
   const interacted = (): void => undefined;
   bindInput({ canvas, command, lanes: () => session.laneCount(), unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
-  required<HTMLButtonElement>("#hold").addEventListener("click", () => { audio.unlock(); interacted(); command("hold"); });
-  required<HTMLButtonElement>("#drop").addEventListener("click", () => { audio.unlock(); interacted(); command("soft-drop"); });
-  pauseButton.addEventListener("click", () => togglePause(session));
+  bindActionButton(required<HTMLButtonElement>("#hold"), () => { audio.unlock(); interacted(); command("hold"); });
+  bindActionButton(required<HTMLButtonElement>("#drop"), () => { audio.unlock(); interacted(); command("soft-drop"); });
   required<HTMLButtonElement>("#resume").addEventListener("click", () => resume(session));
   restartButton.addEventListener("click", () => {
     recordRequest += 1;
     endShown = false;
     show(endOverlay, false);
     session.restartSolo();
-  });
-  soundButton.addEventListener("click", () => {
-    const muted = audio.toggle();
-    soundButton.textContent = muted ? "×" : "♪";
-    announce(t(muted ? "muted" : "unmuted"));
   });
   document.addEventListener("visibilitychange", () => { if (document.hidden && !session.isArena()) togglePause(session, true); });
 }
@@ -304,9 +294,7 @@ function resume(session: ArenaSession): void { session.local.resume(); show(paus
 
 function updateHud(snapshot: GameSnapshot, session: ArenaSession): void {
   score.textContent = snapshot.score.toLocaleString(bridge.language);
-  lines.textContent = String(snapshot.lines);
   level.textContent = String(snapshot.level);
-  pauseButton.textContent = snapshot.phase === "paused" ? "▶" : "Ⅱ";
   const status = arenaStatus.querySelector("span");
   if (status) status.textContent = `Arena · ${previewPlayerCount ?? session.playerCount()}/8`;
   boardWrap.classList.toggle("danger", snapshot.board.slice(0, 5).some((row) => row.some(Boolean)));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { horizontalRepeatDelay, isHardDropGesture, resolveGestureAxis } from "./input";
+import { horizontalDragDistance, horizontalRepeatDelay, isHardDropGesture, resolveGestureAxis } from "./input";
 
 describe("touch gesture intent", () => {
   it("locks a downward swipe before incidental horizontal drift can move the piece", () => {
@@ -20,6 +20,11 @@ describe("touch gesture intent", () => {
 
   it("accepts a deliberate long vertical swipe", () => {
     expect(isHardDropGesture(12, 140, 420, 700)).toBe(true);
+  });
+
+  it("requires a deliberate horizontal drag before moving a lane", () => {
+    expect(horizontalDragDistance(320, 4)).toBeCloseTo(67.2);
+    expect(horizontalDragDistance(320, 10)).toBeCloseTo(28);
   });
 });
 

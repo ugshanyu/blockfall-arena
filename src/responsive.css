@@ -13,22 +13,20 @@
     box-shadow: 0 35px 100px rgba(0, 0, 0, .48);
   }
   .hud { padding-inline: 18px; }
-  .stat { min-width: 78px; }
+  .stat { min-width: 88px; }
   .play-zone {
-    grid-template-columns: minmax(300px, 345px) minmax(150px, 220px);
-    align-items: stretch;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     padding: 12px 22px;
-    gap: 14px;
+    gap: 8px;
   }
   .board-wrap { height: min(100%, 690px); }
-  .side-rail { gap: 10px; }
-  .piece-rail { pointer-events: auto; }
-  .piece-rail canvas { width: 76px; }
-  .piece-rail section { padding: 10px 4px; }
-  .opponents { align-content: start; display: grid; grid-template-columns: 1fr 1fr; overflow-y: auto; }
-  .opponent-card { width: 100%; min-height: 138px; }
-  .opponent-card canvas { width: 50px; height: 100px; }
-  .opponent-card div { width: 100%; }
+  .top-rail { min-height: 64px; }
+  .piece-rail, .opponents, .opponent-card { height: 58px; }
+  .piece-rail { flex-basis: 84px; grid-template-columns: 27px 1fr; }
+  .piece-rail canvas { width: 52px; }
+  .opponent-card { flex-basis: 82px; grid-template-columns: 25px minmax(0, 1fr); }
+  .opponent-card canvas { width: 25px; height: 50px; }
   .touch-controls { padding: 10px 22px 14px; background: transparent; border-top: 0; }
   .touch-controls button { min-height: 58px; }
 }
@@ -36,7 +34,12 @@
 @media (max-height: 590px) {
   .hud { min-height: 44px; padding-block: 3px; }
   .stat strong { font-size: 14px; }
-  .icon-button { width: 34px; height: 34px; }
+  .top-rail { min-height: 48px; }
+  .piece-rail, .opponents, .opponent-card { height: 44px; }
+  .piece-rail { flex-basis: 70px; }
+  .piece-rail canvas { width: 41px; }
+  .opponent-card { grid-template-columns: 19px minmax(0, 1fr); }
+  .opponent-card canvas { width: 19px; height: 38px; }
   .touch-controls { padding-top: 4px; }
   .touch-controls button { min-height: 44px; }
   .touch-controls span { font-size: 17px; }
