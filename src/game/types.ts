@@ -1,7 +1,12 @@
 export const BOARD_WIDTH = 10;
 export const BOARD_HEIGHT = 20;
-export type LaneCount = 4 | 10;
-export function laneStart(lanes: LaneCount): number { return lanes === 4 ? 3 : 0; }
+export const LANE_COUNTS = [4, 8, 10] as const;
+export type LaneCount = (typeof LANE_COUNTS)[number];
+export function isLaneCount(value: unknown): value is LaneCount {
+  return typeof value === "number" && LANE_COUNTS.includes(value as LaneCount);
+}
+export function parseLaneCount(value: unknown): LaneCount { return isLaneCount(value) ? value : 10; }
+export function laneStart(lanes: LaneCount): number { return (BOARD_WIDTH - lanes) / 2; }
 
 export type PieceType = "I" | "O" | "T" | "S" | "Z" | "J" | "L";
 export type Cell = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;

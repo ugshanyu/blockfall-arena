@@ -1,7 +1,7 @@
 import { ArenaSession } from "./arena-session";
 import { AudioEffects } from "./effects";
 import { decodeBoard, encodeBoard } from "./game/codec";
-import type { Command, GameEvent, GameSnapshot } from "./game/types";
+import { LANE_COUNTS, type Command, type GameEvent, type GameSnapshot, type LaneCount } from "./game/types";
 import { applyTranslations, setLanguage, t } from "./i18n";
 import { bindInput } from "./input";
 import { OpponentGrid } from "./opponents";
@@ -35,6 +35,7 @@ const restartButton = required<HTMLButtonElement>("#restart");
 const soundButton = required<HTMLButtonElement>("#sound");
 const soloLanes = required<HTMLButtonElement>("#solo-lanes");
 const arena10 = required<HTMLButtonElement>("#arena-10");
+const arena8 = required<HTMLButtonElement>("#arena-8");
 const arena4 = required<HTMLButtonElement>("#arena-4");
 const arenaPlay = required<HTMLButtonElement>("#arena-play");
 
@@ -114,12 +115,17 @@ async function boot(): Promise<void> {
     const lanes = session.laneCount();
     soloLanes.textContent = `${lanes} lanes`;
     arena10.classList.toggle("active", lanes === 10);
+    arena8.classList.toggle("active", lanes === 8);
     arena4.classList.toggle("active", lanes === 4);
-    arena10.disabled = arena4.disabled = session.isArena() && !session.isHost();
+    arena10.disabled = arena8.disabled = arena4.disabled = session.isArena() && !session.isHost();
   };
-  const chooseLanes = (lanes: 4 | 10): void => { if (session.setLanes(lanes)) { endShown = false; show(endOverlay, false); updateLaneControls(); } };
-  soloLanes.addEventListener("click", () => chooseLanes(session.laneCount() === 10 ? 4 : 10));
+  const chooseLanes = (lanes: LaneCount): void => { if (session.setLanes(lanes)) { endShown = false; show(endOverlay, false); updateLaneControls(); } };
+  soloLanes.addEventListener("click", () => {
+    const current = LANE_COUNTS.indexOf(session.laneCount());
+    chooseLanes(LANE_COUNTS[(current + 1) % LANE_COUNTS.length]!);
+  });
   arena10.addEventListener("click", () => chooseLanes(10));
+  arena8.addEventListener("click", () => chooseLanes(8));
   arena4.addEventListener("click", () => chooseLanes(4));
   arenaPlay.addEventListener("click", () => session.startArena());
   updateLaneControls();

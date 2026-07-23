@@ -131,13 +131,13 @@ export class GameRenderer {
     gradient.addColorStop(1, "rgba(8,10,29,.98)");
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
-    if (snapshot.lanes === 4) {
-      const start = laneStart(4) * CELL;
+    if (snapshot.lanes < BOARD_WIDTH) {
+      const start = laneStart(snapshot.lanes) * CELL;
       ctx.fillStyle = "rgba(1,2,10,.78)";
       ctx.fillRect(0, 0, start, HEIGHT);
-      ctx.fillRect(start + 4 * CELL, 0, WIDTH - start - 4 * CELL, HEIGHT);
+      ctx.fillRect(start + snapshot.lanes * CELL, 0, WIDTH - start - snapshot.lanes * CELL, HEIGHT);
       ctx.strokeStyle = "rgba(255,224,122,.34)";
-      ctx.strokeRect(start, 0, 4 * CELL, HEIGHT);
+      ctx.strokeRect(start, 0, snapshot.lanes * CELL, HEIGHT);
     }
     ctx.strokeStyle = "rgba(132,151,230,.07)";
     ctx.lineWidth = 1;
@@ -316,10 +316,11 @@ export function drawMiniBoard(canvas: HTMLCanvasElement, snapshot?: GameSnapshot
   ctx.lineWidth = 0.5;
   for (let y = 1; y < BOARD_HEIGHT; y += 1) { ctx.beginPath(); ctx.moveTo(0, y * cell); ctx.lineTo(width, y * cell); ctx.stroke(); }
   if (!snapshot) return;
-  if (snapshot.lanes === 4) {
+  if (snapshot.lanes < BOARD_WIDTH) {
+    const start = laneStart(snapshot.lanes);
     ctx.fillStyle = "rgba(1,2,10,.78)";
-    ctx.fillRect(0, 0, laneStart(4) * cell, canvas.height);
-    ctx.fillRect((laneStart(4) + 4) * cell, 0, laneStart(4) * cell, canvas.height);
+    ctx.fillRect(0, 0, start * cell, canvas.height);
+    ctx.fillRect((start + snapshot.lanes) * cell, 0, start * cell, canvas.height);
   }
   for (let y = 0; y < BOARD_HEIGHT; y += 1) for (let x = 0; x < BOARD_WIDTH; x += 1) {
     const value = snapshot.board[y]?.[x] as Cell;

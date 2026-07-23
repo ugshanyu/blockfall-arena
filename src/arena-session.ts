@@ -2,7 +2,7 @@ import { ArenaAuthority } from "./arena-authority";
 import type { ArenaCallbacks, ArenaStartMessage, CountdownMessage, PlayerInfo } from "./arena-types";
 import { BlockEngine } from "./game/engine";
 import { viewSnapshot } from "./game/network-view";
-import type { Command, GameEvent, GameSnapshot, LaneCount, NetworkSnapshot } from "./game/types";
+import { parseLaneCount, type Command, type GameEvent, type GameSnapshot, type LaneCount, type NetworkSnapshot } from "./game/types";
 import { t } from "./i18n";
 import type { ArenaWireCheckpoint, ArenaWireEffect, ArenaWireGarbage, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
 export class ArenaSession {
@@ -206,7 +206,7 @@ export class ArenaSession {
       }
     } else if (message.action_type === "arena_roster") this.receiveRoster(data);
     else if (message.action_type === "arena_rules" && !this.host && !this.roundActive && message.player_id === this.hostId) {
-      this.local.configureLanes(Number(data.lanes) === 4 ? 4 : 10);
+      this.local.configureLanes(parseLaneCount(data.lanes));
     }
     else if (message.action_type === "arena_garbage" && !this.host) this.receiveGarbage(data as unknown as ArenaWireGarbage);
     else if (message.action_type === "arena_countdown") this.receiveCountdown(data as unknown as CountdownMessage);
@@ -240,7 +240,7 @@ export class ArenaSession {
   }
   private receiveCountdown(message: CountdownMessage): void {
     if (!message.players?.includes(this.bridge.playerId)) return;
-    this.countdown = { ...message, lanes: message.lanes === 4 ? 4 : 10 };
+    this.countdown = { ...message, lanes: parseLaneCount(message.lanes) };
     this.roundEnded = false;
   }
   private beginRound(message: CountdownMessage): void {
@@ -255,7 +255,7 @@ export class ArenaSession {
     this.seenAttack = 0;
     this.checkpointElapsed = 0;
     this.checkpointSequence = 0;
-    const lanes = message.lanes === 4 ? 4 : 10;
+    const lanes = parseLaneCount(message.lanes);
     this.authority = new ArenaAuthority(message.players, message.seed, lanes, { id: this.bridge.playerId, engine: this.local });
     this.send("arena_start", message);
     this.callbacks.roundStart();
@@ -273,7 +273,7 @@ export class ArenaSession {
     this.seenAttack = 0;
     this.checkpointElapsed = 0;
     this.checkpointSequence = 0;
-    this.local.reset(message.seed, message.lanes === 4 ? 4 : 10, true);
+    this.local.reset(message.seed, parseLaneCount(message.lanes), true);
     this.callbacks.roundStart();
   }
   private broadcastState(): void {

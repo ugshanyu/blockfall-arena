@@ -136,12 +136,24 @@ describe("ArenaSession platform lifecycle", () => {
     const platform = mockPlatform("multiplayer", "host");
     const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
     session.start();
-    expect(session.setLanes(4)).toBe(true);
+    expect(session.setLanes(8)).toBe(true);
     const snapshot = session.snapshot();
-    expect(snapshot.lanes).toBe(4);
+    expect(snapshot.lanes).toBe(8);
     expect(snapshot.active).toBeNull();
     expect(snapshot.board.flat().every((cell) => cell === 0)).toBe(true);
-    expect(platform.game.realtime).toHaveBeenCalledWith("arena_rules", { lanes: 4 });
+    expect(platform.game.realtime).toHaveBeenCalledWith("arena_rules", { lanes: 8 });
+  });
+
+  it("applies the host's eight-lane waiting-room rule on guests", () => {
+    const platform = mockPlatform("multiplayer", "guest");
+    const session = new ArenaSession(new UsionBridge(platform.api.config, platform.api), callbacks());
+    session.start();
+    platform.handlers.realtime?.({
+      player_id: "host",
+      action_type: "arena_rules",
+      action_data: { lanes: 8 }
+    } as never);
+    expect(session.laneCount()).toBe(8);
   });
 
   it("resends an active round when a participating friend's iframe remounts", () => {

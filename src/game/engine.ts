@@ -12,7 +12,7 @@ import {
   type GameEvent,
   type GamePhase,
   type GameSnapshot,
-  type NetworkSnapshot, type LaneCount,
+  parseLaneCount, type NetworkSnapshot, type LaneCount,
   type PieceType
 } from "./types";
 
@@ -174,7 +174,7 @@ export class BlockEngine {
   }
 
   restore(snapshot: NetworkSnapshot): void {
-    this.lanes = snapshot.lanes ?? 10;
+    this.lanes = parseLaneCount(snapshot.lanes);
     this.board = decodeBoard(snapshot.board);
     this.active = snapshot.active ? { ...snapshot.active } : null;
     this.holdPiece = snapshot.hold;

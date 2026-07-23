@@ -109,6 +109,12 @@ describe("ArenaAuthority", () => {
     expect(authority.engine("guest")?.snapshot().lanes).toBe(4);
   });
 
+  it("keeps eight-lane simulations synchronized", () => {
+    const authority = new ArenaAuthority(["host", "guest"], 22, 8);
+    expect(authority.engine("host")?.snapshot().lanes).toBe(8);
+    expect(authority.engine("guest")?.snapshot().lanes).toBe(8);
+  });
+
   it("uses one clean garbage hole throughout an arena attack", () => {
     const hostEngine = new BlockEngine(22);
     const authority = new ArenaAuthority(["host", "guest"], 22, { id: "host", engine: hostEngine });

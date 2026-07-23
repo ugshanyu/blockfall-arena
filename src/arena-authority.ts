@@ -1,6 +1,6 @@
 import { BlockEngine } from "./game/engine";
 import { SeededRandom } from "./game/random";
-import type { Command, GameEvent, LaneCount, NetworkSnapshot } from "./game/types";
+import { isLaneCount, type Command, type GameEvent, type LaneCount, type NetworkSnapshot } from "./game/types";
 import { classicAttackLines } from "./classic-rules";
 
 interface PlayerSimulation {
@@ -21,7 +21,7 @@ function validCheckpoint(snapshot: NetworkSnapshot): boolean {
     Array.isArray(snapshot.queue) && Array.isArray(snapshot.bag) && Array.isArray(snapshot.garbage) &&
     Number.isFinite(snapshot.score) && snapshot.score >= 0 &&
     Number.isFinite(snapshot.lines) && snapshot.lines >= 0 &&
-    (snapshot.lanes === 4 || snapshot.lanes === 10) &&
+    isLaneCount(snapshot.lanes) &&
     ["playing", "clearing", "paused", "game-over"].includes(snapshot.phase)
   );
 }
@@ -40,7 +40,7 @@ export class ArenaAuthority {
   winnerId?: string;
 
   constructor(readonly playerIds: string[], seed: number, lanesOrLocal: LaneCount | { id: string; engine: BlockEngine } = 10, localArg?: { id: string; engine: BlockEngine }) {
-    const lanes = typeof lanesOrLocal === "number" ? lanesOrLocal : 10;
+    const lanes = typeof lanesOrLocal === "number" ? lanesOrLocal : lanesOrLocal.engine.lanes;
     const local = typeof lanesOrLocal === "number" ? localArg : lanesOrLocal;
     this.random = new SeededRandom(seed ^ 0xa511e9b3);
     this.startedWith = playerIds.length;
