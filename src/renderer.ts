@@ -7,6 +7,16 @@ const HEIGHT = 600;
 const CELL = WIDTH / BOARD_WIDTH;
 const COLORS = ["", "#42ddff", "#ffd95d", "#c98cff", "#55e6a5", "#ff647c", "#6f8cff", "#ff9d54", "#737b96"];
 const PREVIEW_TILE = 17;
+export const CLEAR_VISUALS = {
+  flash: 0.18,
+  overlayAlpha: 0.08,
+  sweepAlpha: 0.18,
+  particlesPerCell: 1
+} as const;
+
+export function clearShake(count: number, combo: number): number {
+  return 0.35 + Math.max(1, count) * 0.2 + Math.max(0, combo - 1) * 0.12;
+}
 
 export function previewPlacement(piece: PieceType, width: number, slotHeight: number): { x: number; y: number } {
   const shape = cells(piece, 0);
@@ -52,12 +62,16 @@ export class GameRenderer {
   effect(event: GameEvent, snapshot: GameSnapshot): void {
     if (event.type === "clear") {
       this.clearRows = [...(event.rows ?? [])];
-      this.shake = 3 + (event.count ?? 1) * 1.8 + Math.max(0, (event.combo ?? 1) - 1) * 1.5;
-      this.flash = 0.8;
+      this.shake = clearShake(event.count ?? 1, event.combo ?? 1);
+      this.flash = CLEAR_VISUALS.flash;
       for (const row of this.clearRows) {
         for (let x = 0; x < BOARD_WIDTH; x += 1) {
-          const color = COLORS[snapshot.board[row]?.[x] ?? 1] ?? "#fff";
-          for (let n = 0; n < 2 + Math.min(2, Math.max(0, (event.combo ?? 1) - 1)); n += 1) this.spawnParticle(x * CELL + CELL / 2, row * CELL + CELL / 2, color);
+          const value = snapshot.board[row]?.[x] ?? 0;
+          if (!value) continue;
+          const color = COLORS[value] ?? "#737b96";
+          for (let n = 0; n < CLEAR_VISUALS.particlesPerCell; n += 1) {
+            this.spawnParticle(x * CELL + CELL / 2, row * CELL + CELL / 2, color);
+          }
         }
       }
     } else if (event.type === "collapse") this.collapseAge = 0;
@@ -89,7 +103,7 @@ export class GameRenderer {
     this.drawTrail(ctx);
     this.drawParticles(ctx);
     if (this.flash > 0.01) {
-      ctx.fillStyle = `rgba(220,235,255,${this.flash * 0.17})`;
+      ctx.fillStyle = `rgba(220,235,255,${this.flash * CLEAR_VISUALS.overlayAlpha})`;
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
     }
     ctx.restore();
@@ -153,15 +167,15 @@ export class GameRenderer {
         const value = snapshot.board[y]?.[x] ?? 0;
         if (!value) continue;
         if (clearing) {
-          const scale = Math.max(0.08, 1 - snapshot.clearProgress * 0.9);
-          this.drawTile(ctx, value, x * CELL + CELL * (1 - scale) / 2, y * CELL + CELL * (1 - scale) / 2, scale, 1 - snapshot.clearProgress * 0.75);
+          const scale = Math.max(0.65, 1 - snapshot.clearProgress * 0.35);
+          this.drawTile(ctx, value, x * CELL + CELL * (1 - scale) / 2, y * CELL + CELL * (1 - scale) / 2, scale, 1 - snapshot.clearProgress * 0.65);
         } else this.drawTile(ctx, value, x * CELL, y * CELL - offset + this.garbageLift, 1, 1);
       }
     }
     if (snapshot.phase === "clearing") {
       const reach = Math.sin(snapshot.clearProgress * Math.PI) * WIDTH * 0.55;
-      ctx.fillStyle = `rgba(255,255,255,${Math.sin(snapshot.clearProgress * Math.PI) * 0.65})`;
-      for (const row of snapshot.clearRows) ctx.fillRect(WIDTH / 2 - reach, row * CELL + CELL * 0.42, reach * 2, CELL * 0.16);
+      ctx.fillStyle = `rgba(220,228,255,${Math.sin(snapshot.clearProgress * Math.PI) * CLEAR_VISUALS.sweepAlpha})`;
+      for (const row of snapshot.clearRows) ctx.fillRect(WIDTH / 2 - reach, row * CELL + CELL * 0.45, reach * 2, CELL * 0.1);
     }
   }
 
@@ -281,8 +295,9 @@ export class GameRenderer {
 
   private spawnParticle(x: number, y: number, color: string): void {
     const angle = Math.random() * Math.PI * 2;
-    const speed = 70 + Math.random() * 150;
-    this.particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 35, life: 0.45 + Math.random() * 0.35, maxLife: 0.8, color, size: 2 + Math.random() * 4 });
+    const speed = 35 + Math.random() * 75;
+    const life = 0.2 + Math.random() * 0.16;
+    this.particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 18, life, maxLife: life, color, size: 1 + Math.random() * 1.5 });
   }
 
   private drawParticles(ctx: CanvasRenderingContext2D): void {

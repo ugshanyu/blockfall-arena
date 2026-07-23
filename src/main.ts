@@ -1,7 +1,7 @@
 import { ArenaSession } from "./arena-session";
 import { AudioEffects } from "./effects";
 import { decodeBoard, encodeBoard } from "./game/codec";
-import { LANE_COUNTS, type Command, type GameEvent, type GameSnapshot, type LaneCount } from "./game/types";
+import { LANE_COUNTS, laneStart, type Command, type GameEvent, type GameSnapshot, type LaneCount } from "./game/types";
 import { applyTranslations, setLanguage, t } from "./i18n";
 import { bindInput } from "./input";
 import { OpponentGrid } from "./opponents";
@@ -196,11 +196,14 @@ function installDevTools(session: ArenaSession): void {
   button.addEventListener("click", () => {
     const state = session.local.networkSnapshot();
     const board = decodeBoard(state.board);
-    for (let y = 16; y < 20; y += 1) board[y] = [0, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+    const gap = laneStart(state.lanes);
+    for (let y = 16; y < 20; y += 1) {
+      board[y] = board[y]!.map((_, x) => (x >= gap && x < gap + state.lanes && x !== gap ? 2 : 0));
+    }
     session.local.restore({
       ...state,
       board: encodeBoard(board),
-      active: { type: "I", rotation: 1, x: -2, y: 16 },
+      active: { type: "I", rotation: 1, x: gap - 2, y: 16 },
       phase: "playing",
       clearRows: [],
       clearProgress: 0
