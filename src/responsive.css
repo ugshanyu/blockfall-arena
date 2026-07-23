@@ -12,7 +12,7 @@
     background: rgba(4, 6, 19, .38);
     box-shadow: 0 35px 100px rgba(0, 0, 0, .48);
   }
-  .hud { min-height: 64px; padding-inline: 18px; gap: 8px; }
+  .hud { min-height: 56px; padding-inline: 18px; gap: 12px; }
   .stat { flex-basis: 64px; }
   .play-zone {
     grid-template-columns: minmax(0, 1fr);
@@ -20,10 +20,10 @@
     padding: 8px 22px 12px;
   }
   .board-wrap { height: min(100%, 720px); }
-  .piece-rail, .opponents, .opponent-card { height: 58px; }
-  .lane-pill { height: 58px; }
-  .piece-rail { flex-basis: 84px; grid-template-columns: 27px 1fr; }
-  .piece-rail canvas { width: 52px; }
+  .piece-rail, .opponents, .opponent-card { height: 48px; }
+  .lane-pill { height: 48px; }
+  .piece-rail { flex-basis: 62px; grid-template-rows: 11px 31px; }
+  .piece-rail canvas { width: 39px; }
   .opponent-card { flex-basis: 82px; grid-template-columns: 25px minmax(0, 1fr); }
   .opponent-card canvas { width: 25px; height: 50px; }
   .touch-controls { padding: 10px 22px 14px; background: transparent; border-top: 0; }
@@ -36,8 +36,8 @@
   .stat strong { font-size: 14px; }
   .piece-rail, .opponents, .opponent-card { height: 44px; }
   .lane-pill { height: 44px; padding-inline: 6px; }
-  .piece-rail { flex-basis: 70px; }
-  .piece-rail canvas { width: 41px; }
+  .piece-rail { flex-basis: 54px; grid-template-rows: 9px 27px; }
+  .piece-rail canvas { width: 34px; }
   .opponent-card { grid-template-columns: 19px minmax(0, 1fr); }
   .opponent-card canvas { width: 19px; height: 38px; }
   .touch-controls { padding-top: 4px; }
