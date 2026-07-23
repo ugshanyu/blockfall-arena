@@ -47,6 +47,19 @@ describe("ArenaSession platform lifecycle", () => {
     expect(arenaSession.laneCount()).toBe(4);
   });
 
+  it("uses the same timed gravity progression in single-player as multiplayer", () => {
+    const solo = mockPlatform("single", "host");
+    const session = new ArenaSession(new UsionBridge(solo.api.config, solo.api), callbacks());
+    const startingY = session.snapshot().active!.y;
+
+    for (let elapsed = 0; elapsed < 800; elapsed += 100) session.update(100);
+    session.update(20);
+    expect(session.snapshot().active!.y).toBe(startingY);
+
+    session.update(14);
+    expect(session.snapshot().active!.y).toBe(startingY + 1);
+  });
+
   it("initializes multiplayer inside a top-level React Native WebView", async () => {
     const platform = mockPlatform("multiplayer", "guest");
     const init = vi.fn(async () => platform.api.config);

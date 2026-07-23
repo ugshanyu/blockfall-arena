@@ -34,7 +34,7 @@ export class ArenaSession {
   private checkpointElapsed = 0;
   private checkpointSequence = 0;
   constructor(private bridge: UsionBridge, private callbacks: ArenaCallbacks) {
-    this.local = new BlockEngine(Date.now(), bridge.isMultiplayer() ? ARENA_DEFAULT_LANES : SOLO_DEFAULT_LANES);
+    this.local = new BlockEngine(Date.now(), bridge.isMultiplayer() ? ARENA_DEFAULT_LANES : SOLO_DEFAULT_LANES, true);
     this.players.set(bridge.playerId, { name: bridge.playerName, avatar: bridge.playerAvatar });
     this.present.add(bridge.playerId);
     this.hostId = (bridge.api?.config.playerIds ?? bridge.config.playerIds ?? [])[0] ?? "";

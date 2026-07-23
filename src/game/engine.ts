@@ -44,14 +44,14 @@ export class BlockEngine {
   level = 1;
   phase: GamePhase = "playing";
   lanes: LaneCount;
-  constructor(seed = Date.now(), lanes: LaneCount = 10) {
+  constructor(seed = Date.now(), lanes: LaneCount = 10, classicArena = false) {
     this.lanes = lanes;
     this.seed = seed >>> 0;
     this.random = new SeededRandom(this.seed);
-    this.reset(this.seed);
+    this.reset(this.seed, this.lanes, classicArena);
   }
 
-  reset(seed = this.seed, lanes: LaneCount = this.lanes, classicArena = false): void {
+  reset(seed = this.seed, lanes: LaneCount = this.lanes, classicArena = this.classicArena): void {
     this.lanes = lanes;
     this.classicArena = classicArena;
     this.roundElapsed = 0;
