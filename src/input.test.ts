@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { controlDragSteps, horizontalDragDistance, horizontalRepeatDelay, isHardDropGesture, resolveGestureAxis } from "./input";
+import { controlDragSteps, horizontalDragDistance, horizontalRepeatDelay, isHardDropGesture, resolveGestureAxis, verticalDragDistance } from "./input";
 
 describe("touch gesture intent", () => {
   it("locks a downward swipe before incidental horizontal drift can move the piece", () => {
@@ -18,13 +18,19 @@ describe("touch gesture intent", () => {
     expect(isHardDropGesture(8, 74, 260, 700)).toBe(false);
   });
 
-  it("accepts a deliberate long vertical swipe", () => {
-    expect(isHardDropGesture(12, 140, 420, 700)).toBe(true);
+  it("accepts a deliberate fast vertical flick but leaves slower motion for dragging", () => {
+    expect(isHardDropGesture(12, 140, 220, 700)).toBe(true);
+    expect(isHardDropGesture(12, 140, 420, 700)).toBe(false);
   });
 
   it("requires a deliberate horizontal drag before moving a lane", () => {
     expect(horizontalDragDistance(320, 4)).toBeCloseTo(67.2);
     expect(horizontalDragDistance(320, 10)).toBeCloseTo(28);
+  });
+
+  it("maps a controlled full-screen downward drag to board rows", () => {
+    expect(verticalDragDistance(700)).toBeCloseTo(28.7);
+    expect(verticalDragDistance(440)).toBe(22);
   });
 
   it("keeps small movement on the Hold control as a tap", () => {

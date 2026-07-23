@@ -2,6 +2,7 @@ import type { Command } from "./game/types";
 
 interface BindOptions {
   canvas: HTMLCanvasElement;
+  surface?: HTMLElement;
   command: (command: Command) => void;
   pause: () => void;
   resume: () => void;
@@ -23,7 +24,7 @@ export function resolveGestureAxis(axis: GestureAxis, dx: number, dy: number, ha
 
 export function isHardDropGesture(dx: number, dy: number, elapsedMs: number, canvasHeight: number): boolean {
   const distance = Math.max(96, canvasHeight * 0.16);
-  return elapsedMs < 650 && dy > distance && dy > Math.abs(dx) * 1.4;
+  return elapsedMs < 280 && dy > distance && dy > Math.abs(dx) * 1.4;
 }
 
 export function horizontalRepeatDelay(elapsedMs: number): number {
@@ -34,6 +35,10 @@ export function horizontalRepeatDelay(elapsedMs: number): number {
 
 export function horizontalDragDistance(boardWidth: number, lanes: number): number {
   return Math.max(28, boardWidth / Math.max(1, lanes) * 0.84);
+}
+
+export function verticalDragDistance(boardHeight: number): number {
+  return Math.max(22, boardHeight / 20 * 0.82);
 }
 
 export interface ControlDragSteps {
@@ -152,12 +157,15 @@ export function bindDragActionButton(
 }
 
 export function bindInput(options: BindOptions): void {
+  const surface = options.surface ?? options.canvas;
   let pointerId = -1;
   let startX = 0;
   let startY = 0;
   let lastStep = 0;
+  let lastDownStep = 0;
   let startTime = 0;
   let axis: GestureAxis = "pending";
+  let startedOnCanvas = false;
   let horizontalTimer: number | undefined;
   let horizontalHeld: "left" | "right" | undefined;
   let horizontalStarted = 0;
@@ -180,31 +188,39 @@ export function bindInput(options: BindOptions): void {
     horizontalTimer = window.setTimeout(repeatHorizontal, 145);
   };
 
-  options.canvas.addEventListener("pointerdown", (event) => {
+  surface.addEventListener("pointerdown", (event) => {
     if (pointerId >= 0) return;
+    if (event.target instanceof Element && event.target.closest("button")) return;
     pointerId = event.pointerId;
     startX = event.clientX;
     startY = event.clientY;
     lastStep = 0;
+    lastDownStep = 0;
     startTime = performance.now();
     axis = "pending";
-    options.canvas.focus?.({ preventScroll: true });
-    options.canvas.setPointerCapture(pointerId);
+    startedOnCanvas = event.target === options.canvas;
+    if (startedOnCanvas) options.canvas.focus?.({ preventScroll: true });
+    surface.setPointerCapture(pointerId);
     options.unlockAudio();
     options.interacted();
     event.preventDefault();
   });
 
-  options.canvas.addEventListener("pointermove", (event) => {
+  surface.addEventListener("pointermove", (event) => {
     if (event.pointerId !== pointerId) return;
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
     axis = resolveGestureAxis(axis, dx, dy, lastStep !== 0);
-    if (axis !== "horizontal") { event.preventDefault(); return; }
-    const cellWidth = horizontalDragDistance(options.canvas.getBoundingClientRect().width, options.lanes?.() ?? 10);
-    const step = Math.trunc(dx / cellWidth);
-    while (lastStep < step) { options.command("right"); lastStep += 1; }
-    while (lastStep > step) { options.command("left"); lastStep -= 1; }
+    if (axis === "horizontal") {
+      const cellWidth = horizontalDragDistance(options.canvas.getBoundingClientRect().width, options.lanes?.() ?? 10);
+      const step = Math.trunc(dx / cellWidth);
+      while (lastStep < step) { options.command("right"); lastStep += 1; }
+      while (lastStep > step) { options.command("left"); lastStep -= 1; }
+    } else if (axis === "vertical" && performance.now() - startTime >= 280) {
+      const cellHeight = verticalDragDistance(options.canvas.getBoundingClientRect().height);
+      const step = Math.max(0, Math.trunc(dy / cellHeight));
+      while (lastDownStep < step) { options.command("soft-drop"); lastDownStep += 1; }
+    }
     event.preventDefault();
   });
 
@@ -213,19 +229,26 @@ export function bindInput(options: BindOptions): void {
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
     const elapsed = performance.now() - startTime;
+    axis = resolveGestureAxis(axis, dx, dy, lastStep !== 0);
     pointerId = -1;
     if (!cancelled) {
-      if (isHardDropGesture(dx, dy, elapsed, options.canvas.clientHeight)) options.command("hard-drop");
-      else if (Math.abs(dx) < 18 && Math.abs(dy) < 18) options.command("rotate-cw");
+      if (axis === "vertical" && isHardDropGesture(dx, dy, elapsed, options.canvas.clientHeight)) options.command("hard-drop");
+      else {
+        if (axis === "vertical") {
+          const cellHeight = verticalDragDistance(options.canvas.getBoundingClientRect().height);
+          const step = Math.max(0, Math.trunc(dy / cellHeight));
+          while (lastDownStep < step) { options.command("soft-drop"); lastDownStep += 1; }
+        } else if (startedOnCanvas && Math.abs(dx) < 18 && Math.abs(dy) < 18) options.command("rotate-cw");
+      }
     }
     event.preventDefault();
   };
 
-  options.canvas.addEventListener("pointerup", (event) => finish(event, false));
-  options.canvas.addEventListener("pointercancel", (event) => finish(event, true));
-  options.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
-  options.canvas.addEventListener("selectstart", (event) => event.preventDefault());
-  options.canvas.addEventListener("dragstart", (event) => event.preventDefault());
+  surface.addEventListener("pointerup", (event) => finish(event, false));
+  surface.addEventListener("pointercancel", (event) => finish(event, true));
+  surface.addEventListener("contextmenu", (event) => event.preventDefault());
+  surface.addEventListener("selectstart", (event) => event.preventDefault());
+  surface.addEventListener("dragstart", (event) => event.preventDefault());
 
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
