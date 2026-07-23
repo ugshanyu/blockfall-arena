@@ -1,10 +1,10 @@
 @media (min-width: 760px) {
   .app-shell { display: grid; place-items: center; padding: 18px; }
   .game-layout {
-    width: min(900px, 100%);
+    width: min(760px, 100%);
     height: min(820px, 100%);
-    grid-template-areas: "hud hud" "opponents play" "opponents controls";
-    grid-template-columns: 224px minmax(420px, 1fr);
+    grid-template-areas: "hud" "play" "controls";
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     overflow: hidden;
     border: 1px solid rgba(162, 177, 244, .16);
@@ -12,21 +12,22 @@
     background: rgba(4, 6, 19, .38);
     box-shadow: 0 35px 100px rgba(0, 0, 0, .48);
   }
-  .game-layout:has(.opponents.is-hidden) {
-    width: min(680px, 100%);
-    grid-template-areas: "hud" "play" "controls";
-    grid-template-columns: minmax(0, 1fr);
-  }
   .hud { padding-inline: 18px; }
   .stat { min-width: 78px; }
-  .play-zone { align-items: center; padding: 12px 22px; gap: 12px; }
+  .play-zone {
+    grid-template-columns: minmax(300px, 345px) minmax(150px, 220px);
+    align-items: stretch;
+    padding: 12px 22px;
+    gap: 14px;
+  }
   .board-wrap { height: min(100%, 690px); }
-  .piece-rail { position: static; width: 74px; flex: 0 0 74px; gap: 12px; pointer-events: auto; }
-  .piece-rail canvas { width: 62px; }
+  .side-rail { gap: 10px; }
+  .piece-rail { pointer-events: auto; }
+  .piece-rail canvas { width: 76px; }
   .piece-rail section { padding: 10px 4px; }
-  .opponents { align-content: start; display: grid; grid-template-columns: 1fr 1fr; overflow-y: auto; padding: 12px; border-right: 1px solid rgba(144, 158, 222, .12); }
-  .opponent-card { width: 100%; height: 148px; display: grid; justify-items: center; align-content: center; text-align: center; }
-  .opponent-card canvas { width: 54px; height: 108px; }
+  .opponents { align-content: start; display: grid; grid-template-columns: 1fr 1fr; overflow-y: auto; }
+  .opponent-card { width: 100%; min-height: 138px; }
+  .opponent-card canvas { width: 50px; height: 100px; }
   .opponent-card div { width: 100%; }
   .touch-controls { padding: 10px 22px 14px; background: transparent; border-top: 0; }
   .touch-controls button { min-height: 58px; }

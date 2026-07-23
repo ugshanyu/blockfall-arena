@@ -37,6 +37,16 @@ function callbacks() {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ArenaSession platform lifecycle", () => {
+  it("starts solo and multiplayer waiting rooms with four lanes", () => {
+    const solo = mockPlatform("single", "host");
+    const soloSession = new ArenaSession(new UsionBridge(solo.api.config, solo.api), callbacks());
+    expect(soloSession.laneCount()).toBe(4);
+
+    const arena = mockPlatform("multiplayer", "host");
+    const arenaSession = new ArenaSession(new UsionBridge(arena.api.config, arena.api), callbacks());
+    expect(arenaSession.laneCount()).toBe(4);
+  });
+
   it("initializes multiplayer inside a top-level React Native WebView", async () => {
     const platform = mockPlatform("multiplayer", "guest");
     const init = vi.fn(async () => platform.api.config);

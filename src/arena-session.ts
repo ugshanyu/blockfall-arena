@@ -6,7 +6,7 @@ import type { Command, GameEvent, GameSnapshot, LaneCount, NetworkSnapshot } fro
 import { t } from "./i18n";
 import type { ArenaWireCheckpoint, ArenaWireEffect, ArenaWireGarbage, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
 export class ArenaSession {
-  readonly local = new BlockEngine();
+  readonly local = new BlockEngine(Date.now(), 4);
   readonly players = new Map<string, PlayerInfo>();
   private remote = new Map<string, NetworkSnapshot>();
   private present = new Set<string>();

@@ -6,6 +6,23 @@ const WIDTH = 300;
 const HEIGHT = 600;
 const CELL = WIDTH / BOARD_WIDTH;
 const COLORS = ["", "#42ddff", "#ffd95d", "#c98cff", "#55e6a5", "#ff647c", "#6f8cff", "#ff9d54", "#737b96"];
+const PREVIEW_TILE = 17;
+
+export function previewPlacement(piece: PieceType, width: number, slotHeight: number): { x: number; y: number } {
+  const shape = cells(piece, 0);
+  const xs = shape.map(([x]) => x);
+  const ys = shape.map(([, y]) => y);
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  const pieceWidth = (maxX - minX + 1) * PREVIEW_TILE;
+  const pieceHeight = (maxY - minY + 1) * PREVIEW_TILE;
+  return {
+    x: (width - pieceWidth) / 2 - minX * PREVIEW_TILE,
+    y: (slotHeight - pieceHeight) / 2 - minY * PREVIEW_TILE
+  };
+}
 
 function context2d(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   const context = canvas.getContext("2d");
@@ -76,8 +93,8 @@ export class GameRenderer {
       ctx.fillRect(0, 0, WIDTH, HEIGHT);
     }
     ctx.restore();
-    this.drawPreview(this.holdCanvas, snapshot.hold ? [snapshot.hold] : []);
-    this.drawPreview(this.nextCanvas, snapshot.next.slice(0, 3));
+    this.drawPreview(this.holdCanvas, snapshot.hold ? [snapshot.hold] : [], 1);
+    this.drawPreview(this.nextCanvas, snapshot.next.slice(0, 3), 3);
   }
 
   private resize(): void {
@@ -244,11 +261,21 @@ export class GameRenderer {
     return tile;
   }
 
-  private drawPreview(canvas: HTMLCanvasElement, pieces: PieceType[]): void {
+  private drawPreview(canvas: HTMLCanvasElement, pieces: PieceType[], slots: number): void {
     const ctx = context2d(canvas);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const slotHeight = canvas.height / slots;
     pieces.forEach((piece, index) => {
-      for (const [x, y] of cells(piece, 0)) ctx.drawImage(this.tile(PIECE_ID[piece]), 10 + x * 17, 5 + index * 70 + y * 17, 16, 16);
+      const position = previewPlacement(piece, canvas.width, slotHeight);
+      for (const [x, y] of cells(piece, 0)) {
+        ctx.drawImage(
+          this.tile(PIECE_ID[piece]),
+          position.x + x * PREVIEW_TILE,
+          index * slotHeight + position.y + y * PREVIEW_TILE,
+          PREVIEW_TILE - 1,
+          PREVIEW_TILE - 1
+        );
+      }
     });
   }
 

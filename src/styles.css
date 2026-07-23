@@ -28,7 +28,7 @@ body::before {
 
 .is-hidden { display: none !important; }
 .app-shell { position: relative; height: 100dvh; min-height: 440px; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-.game-layout { width: 100%; height: 100%; margin: auto; display: grid; grid-template-areas: "hud" "opponents" "play" "controls"; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.game-layout { width: 100%; height: 100%; margin: auto; display: grid; grid-template-areas: "hud" "play" "controls"; grid-template-rows: auto minmax(0, 1fr) auto; }
 
 .hud {
   grid-area: hud;
@@ -58,16 +58,29 @@ body::before {
 .lane-choice button.active { border-color: #ffe07a; background: rgba(244,191,76,.16); color: #ffe9a6; }
 .lane-choice button:disabled { opacity: .55; }
 
-.play-zone { position: relative; grid-area: play; min-height: 0; display: flex; justify-content: center; align-items: center; padding: 4px 0; }
-.piece-rail { position: absolute; z-index: 3; top: 10px; right: 7px; width: 48px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.play-zone {
+  position: relative;
+  grid-area: play;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(64px, 20vw, 84px);
+  justify-content: center;
+  align-items: stretch;
+  gap: 7px;
+  padding: 5px 7px;
+}
+.side-rail { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 7px; overflow: hidden; }
+.piece-rail { z-index: 3; width: 100%; flex: 0 0 auto; pointer-events: none; }
 .piece-rail section { display: grid; place-items: center; gap: 3px; padding: 7px 2px; border: 1px solid rgba(143, 158, 222, .12); border-radius: 12px; background: rgba(7, 10, 31, .58); }
-.piece-rail canvas { display: block; width: 44px; height: auto; }
+.piece-rail canvas { display: block; width: min(100%, 66px); height: auto; }
 
 .board-wrap {
   position: relative;
   height: min(100%, 200vw);
   max-width: 100%;
   width: auto;
+  justify-self: end;
+  align-self: center;
   aspect-ratio: 1 / 2;
   overflow: hidden;
   border: 0;
@@ -122,14 +135,15 @@ body::before {
 .touch-controls .drop { border-color: rgba(245, 205, 101, .34); background: linear-gradient(180deg, #5f4c37, #302b3c); }
 .touch-controls span { font-size: 22px; line-height: 1; }
 .touch-controls b { color: #9fa8cc; font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
-.touch-controls .hold-control { grid-template-columns: 76px auto; align-content: center; justify-content: center; column-gap: 5px; }
+.touch-controls .hold-control { position: relative; display: grid; place-items: center; overflow: hidden; }
 .hold-control canvas { width: 76px; height: 54px; }
+.hold-control b { position: absolute; right: 10px; bottom: 7px; }
 
-.opponents { grid-area: opponents; display: flex; gap: 6px; overflow-x: auto; padding: 5px 8px 1px; scrollbar-width: none; }
+.opponents { min-height: 0; display: flex; flex: 1 1 auto; flex-direction: column; gap: 6px; overflow-y: auto; padding: 0; scrollbar-width: none; }
 .opponents::-webkit-scrollbar { display: none; }
-.opponent-card { flex: 0 0 86px; height: 60px; display: flex; align-items: center; gap: 5px; padding: 4px; overflow: hidden; border: 1px solid rgba(143, 158, 222, .13); border-radius: 10px; background: rgba(7, 10, 29, .72); transition: opacity .2s; }
-.opponent-card canvas { width: 25px; height: 50px; border-radius: 3px; }
-.opponent-card div { min-width: 0; display: grid; gap: 3px; }
+.opponent-card { flex: 0 0 auto; min-height: 96px; display: grid; justify-items: center; align-content: center; gap: 3px; padding: 5px 3px; overflow: hidden; border: 1px solid rgba(143, 158, 222, .13); border-radius: 10px; background: rgba(7, 10, 29, .72); text-align: center; transition: opacity .2s; }
+.opponent-card canvas { width: 34px; height: 68px; border-radius: 3px; }
+.opponent-card div { width: 100%; min-width: 0; display: grid; gap: 2px; }
 .opponent-card b { overflow: hidden; color: #dce0f5; font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
 .opponent-card span { color: #efce73; font-size: 9px; font-variant-numeric: tabular-nums; }
 .opponent-card.is-ready { border-color: rgba(105, 232, 168, .3); }
