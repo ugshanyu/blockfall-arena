@@ -129,13 +129,15 @@ body::before {
 .record-row strong { color: #f7dc82; font-variant-numeric: tabular-nums; }
 
 .touch-controls { grid-area: controls; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; width: 100%; padding: 7px 8px max(8px, env(safe-area-inset-bottom)); border-top: 1px solid rgba(144, 158, 222, .13); background: rgba(5, 7, 22, .78); backdrop-filter: blur(14px); }
-.touch-controls button { position: relative; min-height: 54px; border: 1px solid rgba(151, 165, 226, .18); border-radius: 15px; background: linear-gradient(180deg, rgba(31, 38, 79, .88), rgba(15, 19, 47, .92)); display: grid; place-items: center; align-content: center; gap: 1px; box-shadow: inset 0 1px rgba(255,255,255,.07); touch-action: manipulation; -webkit-touch-callout: none !important; -webkit-user-select: none !important; user-select: none !important; }
+.touch-controls button { position: relative; min-height: 54px; padding: 3px 8px; border: 1px solid rgba(151, 165, 226, .18); border-radius: 15px; background: linear-gradient(180deg, rgba(31, 38, 79, .88), rgba(15, 19, 47, .92)); display: grid; grid-template-rows: 40px 11px; place-items: center; align-content: center; gap: 2px; box-shadow: inset 0 1px rgba(255,255,255,.07); touch-action: manipulation; -webkit-touch-callout: none !important; -webkit-user-select: none !important; user-select: none !important; }
 .touch-controls button > * { pointer-events: none; }
 .touch-controls button:active { transform: translateY(1px); filter: brightness(1.2); }
-.touch-controls span { font-size: 22px; line-height: 1; }
 .touch-controls b { color: #9fa8cc; font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
 .touch-controls .hold-control { overflow: hidden; }
-.hold-control canvas { width: 76px; height: 54px; }
+.control-visual { position: relative; width: 64px; height: 40px; display: grid; place-items: center; color: #e5e8ff; line-height: 1; }
+.hold-visual::before { content: ""; position: absolute; width: 22px; height: 22px; border: 1px solid rgba(181, 191, 235, .22); border-radius: 6px; background: rgba(8, 11, 33, .22); }
+.hold-control canvas { position: relative; z-index: 1; width: 64px; height: 48px; }
+.down-visual { font-size: 20px; text-shadow: 0 2px 12px rgba(173, 188, 255, .2); }
 
 .opponents { min-width: 0; height: 52px; display: flex; flex: 1 1 auto; gap: 5px; overflow-x: auto; overflow-y: hidden; padding: 0; scrollbar-width: none; }
 .opponents::-webkit-scrollbar { display: none; }

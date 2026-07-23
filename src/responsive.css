@@ -42,7 +42,7 @@
   .opponent-card canvas { width: 19px; height: 38px; }
   .touch-controls { padding-top: 4px; }
   .touch-controls button { min-height: 44px; }
-  .touch-controls span { font-size: 17px; }
+  .down-visual { font-size: 18px; }
   .panel { padding: 12px; }
   .records { height: 95px; }
 }

@@ -68,8 +68,14 @@
         </div>
 
         <div class="touch-controls" aria-label="Touch controls">
-          <button id="hold" class="hold-control" type="button"><canvas id="hold-canvas" width="96" height="72" aria-hidden="true"></canvas><b data-i18n="hold">Hold</b></button>
-          <button id="drop" class="drop" type="button"><span>▼</span><b data-i18n="drop">Down</b></button>
+          <button id="hold" class="hold-control" type="button">
+            <span class="control-visual hold-visual" aria-hidden="true"><canvas id="hold-canvas" width="96" height="72"></canvas></span>
+            <b data-i18n="hold">Hold</b>
+          </button>
+          <button id="drop" class="drop" type="button">
+            <span class="control-visual down-visual" aria-hidden="true">▼</span>
+            <b data-i18n="drop">Down</b>
+          </button>
         </div>
       </section>
     </main>
