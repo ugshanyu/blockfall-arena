@@ -1,7 +1,7 @@
 export const CLASSIC_RULES = {
   gravity: 0.02,
-  gravityIncrease: 0.0025,
-  gravityMarginMs: 60_000,
+  gravityIncrease: 0.00125,
+  gravityMarginMs: 30_000,
   garbageMultiplier: 1,
   garbageMarginMs: 180_000,
   garbageIncrease: 0.008
