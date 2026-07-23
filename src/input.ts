@@ -2,7 +2,6 @@ import type { Command } from "./game/types";
 
 interface BindOptions {
   canvas: HTMLCanvasElement;
-  surface?: HTMLElement;
   command: (command: Command) => void;
   pause: () => void;
   resume: () => void;
@@ -74,14 +73,12 @@ export function bindActionButton(button: HTMLButtonElement, action: () => void):
 }
 
 export function bindInput(options: BindOptions): void {
-  const surface = options.surface ?? options.canvas;
   let pointerId = -1;
   let startX = 0;
   let startY = 0;
   let lastStep = 0;
   let startTime = 0;
   let axis: GestureAxis = "pending";
-  let startedOnCanvas = false;
   let horizontalTimer: number | undefined;
   let horizontalHeld: "left" | "right" | undefined;
   let horizontalStarted = 0;
@@ -104,24 +101,22 @@ export function bindInput(options: BindOptions): void {
     horizontalTimer = window.setTimeout(repeatHorizontal, 145);
   };
 
-  surface.addEventListener("pointerdown", (event) => {
+  options.canvas.addEventListener("pointerdown", (event) => {
     if (pointerId >= 0) return;
-    if (event.target instanceof Element && event.target.closest("button")) return;
     pointerId = event.pointerId;
     startX = event.clientX;
     startY = event.clientY;
     lastStep = 0;
     startTime = performance.now();
     axis = "pending";
-    startedOnCanvas = event.target === options.canvas;
-    if (startedOnCanvas) options.canvas.focus?.({ preventScroll: true });
-    surface.setPointerCapture(pointerId);
+    options.canvas.focus?.({ preventScroll: true });
+    options.canvas.setPointerCapture(pointerId);
     options.unlockAudio();
     options.interacted();
     event.preventDefault();
   });
 
-  surface.addEventListener("pointermove", (event) => {
+  options.canvas.addEventListener("pointermove", (event) => {
     if (event.pointerId !== pointerId) return;
     const dx = event.clientX - startX;
     const dy = event.clientY - startY;
@@ -142,16 +137,16 @@ export function bindInput(options: BindOptions): void {
     pointerId = -1;
     if (!cancelled) {
       if (isHardDropGesture(dx, dy, elapsed, options.canvas.clientHeight)) options.command("hard-drop");
-      else if (startedOnCanvas && Math.abs(dx) < 18 && Math.abs(dy) < 18) options.command("rotate-cw");
+      else if (Math.abs(dx) < 18 && Math.abs(dy) < 18) options.command("rotate-cw");
     }
     event.preventDefault();
   };
 
-  surface.addEventListener("pointerup", (event) => finish(event, false));
-  surface.addEventListener("pointercancel", (event) => finish(event, true));
-  surface.addEventListener("contextmenu", (event) => event.preventDefault());
-  surface.addEventListener("selectstart", (event) => event.preventDefault());
-  surface.addEventListener("dragstart", (event) => event.preventDefault());
+  options.canvas.addEventListener("pointerup", (event) => finish(event, false));
+  options.canvas.addEventListener("pointercancel", (event) => finish(event, true));
+  options.canvas.addEventListener("contextmenu", (event) => event.preventDefault());
+  options.canvas.addEventListener("selectstart", (event) => event.preventDefault());
+  options.canvas.addEventListener("dragstart", (event) => event.preventDefault());
 
   window.addEventListener("keydown", (event) => {
     const key = event.key.toLowerCase();
