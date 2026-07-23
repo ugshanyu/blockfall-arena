@@ -274,7 +274,7 @@ function bindControls(session: ArenaSession, audio: AudioEffects): void {
     else audio.move();
   };
   const interacted = (): void => undefined;
-  bindInput({ canvas, command, lanes: () => session.laneCount(), unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
+  bindInput({ canvas, surface: required<HTMLElement>(".game-layout"), command, lanes: () => session.laneCount(), unlockAudio: () => audio.unlock(), interacted, pause: () => togglePause(session), resume: () => resume(session) });
   bindActionButton(required<HTMLButtonElement>("#hold"), () => { audio.unlock(); interacted(); command("hold"); });
   bindActionButton(required<HTMLButtonElement>("#drop"), () => { audio.unlock(); interacted(); command("soft-drop"); });
   required<HTMLButtonElement>("#resume").addEventListener("click", () => resume(session));

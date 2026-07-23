@@ -28,7 +28,7 @@ body::before {
 
 .is-hidden { display: none !important; }
 .app-shell { position: relative; height: 100dvh; min-height: 440px; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
-.game-layout { width: 100%; height: 100%; margin: auto; display: grid; grid-template-areas: "hud" "play" "controls"; grid-template-rows: auto minmax(0, 1fr) auto; }
+.game-layout { width: 100%; height: 100%; margin: auto; display: grid; grid-template-areas: "hud" "play" "controls"; grid-template-rows: auto minmax(0, 1fr) auto; touch-action: none; }
 
 .hud {
   grid-area: hud;
@@ -135,7 +135,6 @@ body::before {
 .touch-controls b { color: #9fa8cc; font-size: 9px; letter-spacing: .11em; text-transform: uppercase; }
 .touch-controls .hold-control { overflow: hidden; }
 .control-visual { position: relative; width: 64px; height: 40px; display: grid; place-items: center; color: #e5e8ff; line-height: 1; }
-.hold-visual::before { content: ""; position: absolute; width: 22px; height: 22px; border: 1px solid rgba(181, 191, 235, .22); border-radius: 6px; background: rgba(8, 11, 33, .22); }
 .hold-control canvas { position: relative; z-index: 1; width: 64px; height: 48px; }
 .down-visual { font-size: 20px; text-shadow: 0 2px 12px rgba(173, 188, 255, .2); }
 
