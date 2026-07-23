@@ -5,8 +5,12 @@ import { viewSnapshot } from "./game/network-view";
 import { parseLaneCount, type Command, type GameEvent, type GameSnapshot, type LaneCount, type NetworkSnapshot } from "./game/types";
 import { t } from "./i18n";
 import type { ArenaWireCheckpoint, ArenaWireEffect, ArenaWireGarbage, ArenaWireInput, ArenaWireState, RealtimeMessage, UsionBridge } from "./usion";
+
+const SOLO_DEFAULT_LANES: LaneCount = 8;
+const ARENA_DEFAULT_LANES: LaneCount = 4;
+
 export class ArenaSession {
-  readonly local = new BlockEngine(Date.now(), 4);
+  readonly local: BlockEngine;
   readonly players = new Map<string, PlayerInfo>();
   private remote = new Map<string, NetworkSnapshot>();
   private present = new Set<string>();
@@ -30,6 +34,7 @@ export class ArenaSession {
   private checkpointElapsed = 0;
   private checkpointSequence = 0;
   constructor(private bridge: UsionBridge, private callbacks: ArenaCallbacks) {
+    this.local = new BlockEngine(Date.now(), bridge.isMultiplayer() ? ARENA_DEFAULT_LANES : SOLO_DEFAULT_LANES);
     this.players.set(bridge.playerId, { name: bridge.playerName, avatar: bridge.playerAvatar });
     this.present.add(bridge.playerId);
     this.hostId = (bridge.api?.config.playerIds ?? bridge.config.playerIds ?? [])[0] ?? "";
@@ -151,6 +156,7 @@ export class ArenaSession {
   private promote(alreadyJoining: boolean): void {
     if (!this.arenaMode) {
       this.arenaMode = true;
+      this.local.reset(Date.now(), ARENA_DEFAULT_LANES);
       this.callbacks.mode(true);
     }
     const roster = this.bridge.api?.config.playerIds ?? this.bridge.config.playerIds ?? [];

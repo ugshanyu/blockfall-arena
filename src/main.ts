@@ -212,6 +212,7 @@ function installDevTools(session: ArenaSession): void {
   arenaButton.setAttribute("aria-label", "Preview full arena");
   arenaButton.style.cssText = "position:fixed;inset:0 auto auto 3px;width:2px;height:2px;opacity:.001;overflow:hidden;z-index:9999";
   arenaButton.addEventListener("click", () => {
+    session.setLanes(4);
     previewWaiting = false;
     previewPlayerCount = 8;
     previewOpponents = new Map();
@@ -222,6 +223,7 @@ function installDevTools(session: ArenaSession): void {
       previewOpponents.set(id, { ...base, board: base.board.map((row) => [...row]), score: index * 1240, lines: index * 3 });
     }
     previewReadyIds = [...previewOpponents.keys()];
+    show(soloLanes, false);
     show(opponentRoot, true);
     show(arenaStatus, true);
   });
@@ -232,12 +234,14 @@ function installDevTools(session: ArenaSession): void {
   waitingButton.setAttribute("aria-label", "Preview arena waiting");
   waitingButton.style.cssText = "position:fixed;inset:0 auto auto 20px;width:6px;height:6px;opacity:.001;overflow:hidden;z-index:9999";
   waitingButton.addEventListener("click", () => {
+    session.setLanes(4);
     previewWaiting = true;
     previewPlayerCount = 2;
     previewOpponents = new Map();
     previewReadyIds = ["rival-ready"];
     session.players.set("rival-ready", { name: "Rival ready", avatar: "" });
     waitingCount.textContent = t("readyCount", { count: 2, max: 8 });
+    show(soloLanes, false);
     show(opponentRoot, true);
     show(arenaStatus, true);
     show(waitingOverlay, true);

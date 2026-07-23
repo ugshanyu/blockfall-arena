@@ -18,19 +18,16 @@
         <div class="hud" aria-label="Game status">
           <div class="stat"><span data-i18n="score">Score</span><strong id="score">0</strong></div>
           <div class="stat"><span data-i18n="level">Level</span><strong id="level">1</strong></div>
+          <button id="solo-lanes" class="lane-pill" type="button" aria-label="Switch board width">8 lanes</button>
+          <div id="arena-status" class="arena-status is-hidden"><i></i><span>Arena · 1/8</span></div>
+          <aside class="piece-rail" aria-label="Next piece">
+            <span data-i18n="next">Next</span>
+            <canvas id="next-canvas" width="72" height="56"></canvas>
+          </aside>
+          <aside id="opponents" class="opponents is-hidden" aria-label="Other players"></aside>
         </div>
 
         <div class="play-zone">
-          <div class="top-rail">
-            <button id="solo-lanes" class="lane-pill" type="button" aria-label="Switch board width">4 lanes</button>
-            <div id="arena-status" class="arena-status is-hidden"><i></i><span>Arena · 1/8</span></div>
-            <aside class="piece-rail" aria-label="Next piece">
-              <span data-i18n="next">Next</span>
-              <canvas id="next-canvas" width="72" height="56"></canvas>
-            </aside>
-            <aside id="opponents" class="opponents is-hidden" aria-label="Other players"></aside>
-          </div>
-
           <div id="board-wrap" class="board-wrap">
             <canvas id="game-canvas" width="300" height="600" tabindex="0" aria-label="Falling-block game board"></canvas>
             <div id="callout" class="callout" aria-live="polite"></div>

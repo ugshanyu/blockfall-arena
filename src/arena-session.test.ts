@@ -37,10 +37,10 @@ function callbacks() {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("ArenaSession platform lifecycle", () => {
-  it("starts solo and multiplayer waiting rooms with four lanes", () => {
+  it("starts solo with eight lanes and multiplayer waiting rooms with four lanes", () => {
     const solo = mockPlatform("single", "host");
     const soloSession = new ArenaSession(new UsionBridge(solo.api.config, solo.api), callbacks());
-    expect(soloSession.laneCount()).toBe(4);
+    expect(soloSession.laneCount()).toBe(8);
 
     const arena = mockPlatform("multiplayer", "host");
     const arenaSession = new ArenaSession(new UsionBridge(arena.api.config, arena.api), callbacks());
@@ -86,6 +86,7 @@ describe("ArenaSession platform lifecycle", () => {
     expect(session.isArena()).toBe(false);
     platform.handlers.roomAssigned?.({ roomId: "room-1" } as never);
     expect(session.isArena()).toBe(true);
+    expect(session.laneCount()).toBe(4);
     expect(events.mode).toHaveBeenCalledWith(true);
     expect(platform.game.join).not.toHaveBeenCalled();
   });
